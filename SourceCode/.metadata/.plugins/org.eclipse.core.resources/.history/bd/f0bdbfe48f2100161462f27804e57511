@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <caseValues>
+        <plural>false</plural>
+        <value>Configuration</value>
+    </caseValues>
+    <caseValues>
+        <plural>true</plural>
+        <value>Configuration</value>
+    </caseValues>
+    <fields>
+        <label><!-- Number Of Columns --></label>
+        <name>Number_Of_Columns__c</name>
+    </fields>
+    <fields>
+        <label><!-- Number Of Fields Per Column --></label>
+        <name>Number_Of_Fields_Per_Column__c</name>
+    </fields>
+    <fields>
+        <label><!-- Number Of Records Per Page --></label>
+        <name>Number_Of_Records_Per_Page__c</name>
+    </fields>
+    <fields>
+        <label><!-- SalesforceBaseURL --></label>
+        <name>SalesforceBaseURL__c</name>
+    </fields>
+    <fields>
+        <label><!-- Sort Fields By --></label>
+        <name>Sort_Fields_By__c</name>
+    </fields>
+    <startsWith>Consonant</startsWith>
+</CustomObjectTranslation>

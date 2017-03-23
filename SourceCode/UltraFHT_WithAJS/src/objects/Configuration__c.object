@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customSettingsType>List</customSettingsType>
+    <fields>
+        <fullName>Number_Of_Columns__c</fullName>
+        <label>Number Of Columns</label>
+        <precision>18</precision>
+        <scale>0</scale>
+        <type>Number</type>
+    </fields>
+    <fields>
+        <fullName>Number_Of_Fields_Per_Column__c</fullName>
+        <label>Number Of Fields Per Column</label>
+        <precision>18</precision>
+        <scale>0</scale>
+        <type>Number</type>
+    </fields>
+    <fields>
+        <fullName>Number_Of_Records_Per_Page__c</fullName>
+        <label>Number Of Records Per Page</label>
+        <precision>18</precision>
+        <scale>0</scale>
+        <type>Number</type>
+    </fields>
+    <fields>
+        <fullName>SalesforceBaseURL__c</fullName>
+        <label>SalesforceBaseURL</label>
+        <length>150</length>
+        <type>Text</type>
+    </fields>
+    <fields>
+        <fullName>Sort_Fields_By__c</fullName>
+        <label>Sort Fields By</label>
+        <length>15</length>
+        <type>Text</type>
+    </fields>
+    <label>Configuration</label>
+</CustomObject>

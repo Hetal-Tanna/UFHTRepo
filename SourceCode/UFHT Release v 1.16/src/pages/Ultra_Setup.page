@@ -1,0 +1,530 @@
+<!--
+    * @Page Name: Ultra_Setup
+    * @Description: Designed Visualforce page to setup the object's fields
+    *               for tracking their History. This page shows all updatable objects and
+    *               their updatable fields with checkboxes also tracks formula fields as well.
+    *               User can paginate through the fields.
+    *               Page has functionality to configure the display layout of fields.
+    * ===================================================================================================
+    *       Version   | Date        | Author             | Comments
+    * ---------------------------------------------------------------------------------------------------
+    *       1.0       | 13/1/2017  | Eternus Solutions  | 1. Created page
+    * ===================================================================================================
+    -->
+<apex:page controller="UltraSetupController" docType="html-5.0"
+    standardStylesheets="false" sidebar="false"
+    tabStyle="Setup_Field_History__tab">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" cache="true" />
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css" />
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <script src="https://code.jquery.com/ui/1.11.2/jquery-ui.js"></script>
+    
+    <!-- Including Bootstrap CSS Start -->
+    <link href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/css/bootstrap.min.css')}" rel="stylesheet"/>
+    <link href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/font-awesome/css/font-awesome.min.css')}" rel="stylesheet"/>
+    <link href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/css/landing-page1.css')}" rel="stylesheet" />
+    <!-- Including Bootstrap CSS End -->
+
+    <!-- Importing jQuery UI CSS Start (Necessary to be included from CDN) -->
+    <link href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css" rel="stylesheet" />
+    <!-- Importing jQuery UI CSS End -->
+    <!-- Including Custom CSS Start -->
+    <link href="{!URLFOR($Resource.Ultra_Css)}" rel="stylesheet" />
+    <!-- Including Custom CSS End -->
+     
+    <!-- Including jQuery Start -->
+    <script src="{!URLFOR($Resource.UFHTjQueryResources, '/js/jquery.min.js')}" />
+    <!-- Including jQuery End -->
+
+    <!-- Including Bootstrap JS Start -->
+    <script src="{!URLFOR($Resource.BootStrap, '/bootstrapNew/js/bootstrap.min.js')}" />
+    <!-- Including Bootstrap JS End -->
+
+    <!-- Importing jQuery UI JS Start (Necessary to be included from CDN) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js" />
+    <!-- Importing jQuery UI JS End -->
+
+    <!-- Including connection.js (Provided by SFDC) Start -->
+    <script src="/soap/ajax/26.0/connection.js" />
+    <!-- Including connection.js (Provided by SFDC) End -->
+    
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js" />
+     <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular-sanitize.js" />
+    <apex:includeScript value="{!$Resource.UnderscoreJs}" />
+    <apex:includeScript value="{!$Resource.UltraSetupScript}" />
+
+  <script>
+            var pageSize = {!$Label.ufht__rowstodisplay} * {!$Label.ufht__columnstodisplay};
+            var remoteSiteSetting = '{!isRemoteSiteSettings}';
+            var isHTTPCalloutFail = '{!isHTTPCalloutFail}';
+            var objectList = '{!JSENCODE(strOjects)}';
+            var isValidLicense =  {!isValidLicense};
+            var resultedObject = JSON.parse(objectList);
+            
+            var remoteActiongetFields = '{!JSENCODE(HTMLENCODE($RemoteAction.UltraSetupController.getFieldsList))}';
+            var remoteActiongetSelectedFields = '{!JSENCODE(HTMLENCODE($RemoteAction.UltraSetupController.selectedFieldsName))}';
+            var remoteActiongetDeploymentStatus = '{!JSENCODE(HTMLENCODE($RemoteAction.UltraSetupController.checkTriggerDeploymentStatus))}';
+            
+            
+  </script>
+    <div class="bs PageSizeDiv PageSizeDiv-inline">
+        <div class="content-section-a content-section-a-inline">
+            <div class="container">
+                <div class="content content-inline">
+                    <apex:form id="frm" styleClass="frm-inline">
+                    <apex:actionFunction name="renewalPackage" action="{!renewalLicenseCheck}"  
+                        rerender="lisenceMessage" 
+                        status="actStatusId"/>
+                        
+                     <apex:actionFunction name="validateLicense" action="{!validateLicenseFn}" oncomplete="window.location.reload();"/>
+                     
+                     <div ng-app="app" ng-controller="ctrl" class="ng-cloak">
+                    
+                        <!-- Header Content Start -->
+                        <div style="height: 47px !important;"> 
+                            <apex:image url="{!URLFOR($Resource.HistoricalDataImage) }"
+                                styleClass="header-image" />
+                            <apex:outputLabel value="{!$Label.ufht__setup_page_title}"
+                                styleClass="PageTitleLabelStyle" />
+                            
+                        </div>
+                        <div>
+                            <apex:outputlabel value="{!$Label.ufht__ultra_select_fields}" 
+                                             styleClass="FieldSectionTitleStyle" style="margin-left: 4%;"/>
+                             
+                             <div class="iconClass" style="float:right;" ng-show="selectedFields.length > 0 && !isRemoteSiteSetting">
+                                <img id="imageId1" class="iconIndicator" src="{!URLFOR($Resource.IndicatorIcon)}" title="{!$Label.IconIndicatorText}" style="width: 120px;" />
+                             </div>
+                        </div><br/>
+                        <div ng-show="showDeployMessage">
+                            <apex:actionStatus layout="block" id="counterStatus"> 
+                                <apex:facet name="start"> 
+                                     <div  id="assign-action-spinner-main"> 
+                                         <div id="assign-action-spinner-content-Deploy"> 
+                                            <div class="deployText">{!$Label.DeploymentWaitingMessage}</div><br/><br/> 
+                                            <div ng-show="enablePoller">
+                                            <div class="progress"> 
+                                                <div class="progress-bar progress-bar-striped active"  
+                                                   role="progressbar" 
+                                                     aria-valuenow="{{resultedProgressCounter}}" 
+                                                      aria-valuemin="0" 
+                                                      aria-valuemax="50"  
+                                                     style="width:{{resultedProgressCounter}}%"> 
+                                                 {{resultedProgressCounter}}% 
+                                                 </div> 
+                                            </div> 
+                                            </div>
+                                          </div> 
+                                     </div> 
+                                 </apex:facet> 
+                                 <apex:facet name="stop"> 
+                                     <div id="assign-action-spinner-main"> 
+                                         <div id="assign-action-spinner-content-Deploy"> 
+                                            <div class="deployText">{!$Label.DeploymentWaitingMessage}</div> <br/><br/>
+                                            <div ng-show="enablePoller">
+                                            <div class="progress"> 
+                                                 <div class="progress-bar progress-bar-striped active"  
+                                                      role="progressbar"  
+                                                      aria-valuenow="{{resultedProgressCounter}}" 
+                                                      aria-valuemin="0" 
+                                                      aria-valuemax="50" 
+                                                     style="width:{{resultedProgressCounter}}%"> 
+                                                   {{resultedProgressCounter}}% 
+                                                 </div> 
+                                             </div>
+                                             </div> 
+                                          </div> 
+                                      </div> 
+                                 </apex:facet> 
+                             </apex:actionStatus>  
+                        </div>
+                        <!-- Header Content End -->
+                         <!-- Page Messages Start -->
+                             <div ng-show="showSuccessPanel" class="messageStyle confirmStyle" role="alert">
+                                 <table  border="0" cellpadding="0" cellspacing="0" class="messageTable" style="padding:0px;margin:0px;">
+                                     <tbody>
+                                         <tr valign="top">
+                                             <td>
+                                                <img alt="CONFIRM" class="msgIcon" src="/s.gif"/>
+                                             </td>
+                                             <td class="messageAlign">
+                                                 <div class="messageText">
+                                                     <div ng-bind-html="getHtml(statusMessage)"></div>
+                                                 </div>
+                                             </td>
+                                         </tr>
+                                     </tbody>
+                                 </table>
+                             </div>
+                             
+                             <div ng-show="showErrorPanel" class="errorStyle msgIcon" role="alert">
+                                 <table  border="0" cellpadding="0" cellspacing="0" class="messageTable" style="padding:0px;margin:0px;">
+                                     <tbody>
+                                         <tr valign="top">
+                                             <td>
+                                                <img alt="ERROR" class="msgIcon" src="/s.gif"/>
+                                             </td>
+                                             <td class="messageAlign">
+                                                 <div class="messageText">
+                                                    
+                                                     <div ng-bind-html="getHtml(statusMessage)"></div>
+                                                 </div>
+                                             </td>
+                                         </tr>
+                                     </tbody>
+                                 </table>
+                             </div>
+                             
+                               <div ng-show="!isRemoteSiteSetting" id="showRemotingMessage" class="errorStyle msgIcon" role="alert">
+                                 <table  border="0" cellpadding="0" cellspacing="0" class="messageTable" style="padding:0px;margin:0px;">
+                                     <tbody>
+                                         <tr valign="top">
+                                             <td>
+                                                <img id="showRemotingMessage" alt="ERROR" class="msgIcon" src="/s.gif"/>
+                                             </td>
+                                             <td class="messageAlign">
+                                                 <div class="messageText">
+                                                    <div id="responseErrors"></div>
+                                                 </div>
+                                             </td>
+                                         </tr>
+                                     </tbody>
+                                 </table>
+                              </div>
+                             <div ng-show="showWarningPanel" class="warningStyle msgIcon" role="alert">
+                                 <table  border="0" cellpadding="0" cellspacing="0" class="messageTable" style="padding:0px;margin:0px;">
+                                     <tbody>
+                                         <tr valign="top">
+                                             <td>
+                                                <img alt="WARNING" class="msgIcon" src="/s.gif"/>
+                                             </td>
+                                             <td class="messageAlign">
+                                                 <div class="messageText">
+                                                     
+                                                     <div ng-bind-html="getHtml(statusMessage)"></div>
+                                                 </div>
+                                             </td>
+                                         </tr>
+                                     </tbody>
+                                 </table>
+                             </div>
+                             
+                             <!-- Display message when no record to display for the selected object-->
+                                    <div class="message-viewdata infoM3 hidden-element" role="alert"
+                                        ng-show="lstObjectFields.length == 0 && itemsDB.length > 0 && objectName">
+                                        <table border="0" cellpadding="0" cellspacing="0"
+                                            class="messageTable padding-0-margin">
+                                            <tbody>
+                                                <tr valign="top">
+                                                    <td><img alt="info" class="msgIcon" src="/s.gif"
+                                                        title="info" /></td>
+                                                    <td class="messageCell filterMsgAllignment">
+                                                        <div class="messageText" style="margin-top: 1.5%;margin-left: 3px;">
+                                                            {!$Label.FieldMessage}<br />
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                               
+                                            </tbody>
+                                        </table>
+                                    </div>
+                        <apex:outputPanel id="MessagePanel1">
+                            <span class="font-bold"> <apex:pageMessages escape="false" rendered="{!!isHTTPCalloutFail}"/></span>
+                        </apex:outputPanel>
+                         <apex:outputPanel id="MessagePane2" >
+                            <span class="font-bold"> <apex:pageMessages escape="false" rendered="{!isHTTPCalloutFail}"/></span>
+                        </apex:outputPanel>
+                        <!-- Page Messages End -->
+                        <apex:outputPanel id="lisenceMessage">
+                            <apex:outputPanel id="lisenceMessageBlock" rendered="{!licenseMessage != null}">
+                            <div class="warningStyle msgIcon">
+                                <apex:outputText value="{!licenseMessage}" escape="false"/>
+                            </div>
+                            </apex:outputPanel>
+                        </apex:outputPanel>
+                        
+                        
+                        <apex:outputPanel id="panel2">
+                                <!-- No remote site setting panel Start -->
+                                <div id="panelRemoteSiteSettingMessage1"
+                                    ng-show="isRemoteSiteSetting">
+                                    <div class="RemoteSiteSettingMsg">
+                                        <div class="remoteSiteFont">
+                                            {!$Label.RemoteSiteSettingNotAddedPart1}&nbsp;
+                                            <apex:commandLink value="{!$Label.ufht__remotesitesettingnotaddedlinktext}"
+                                                reRender="hidden" onclick="popupRemotesiteSettingPage();" />
+                                            {!$Label.RemoteSiteSettingNotAddedPart2} <span
+                                                class="font-bold">{!$Label.RemoteSiteSettingNotAddedPart3}</span>
+                                            {!$Label.RemoteSiteSettingNotAddedPart4}
+                                        </div>
+                                    </div>
+                                </div>
+                             </apex:outPutpanel>
+                            <!-- No remote site setting panel End -->
+                        
+                        
+                        
+                         <!-- Processing Loader -->
+                        <div  id="assign-action-spinner-main"
+                            ng-show="showLoader">
+                            <div id="assign-action-spinner-content">
+                                <img src="/img/analytics/reportbuilder/icons/spinner32.gif"
+                                                 alt="{!$Label.VD_Processing}"
+                                              title="{!$Label.VD_Processing}" />
+                                              <span>{!$Label.VD_Processing}</span>
+                            </div>
+                        </div>
+                        
+                         <!-- Loading spinner action status Start -->
+                          <apex:actionStatus id="actStatusId" layout="block"
+                              onstop="endLoading();">
+                              <apex:facet name="start">
+                                  <div id="assign-action-spinner-main">
+                                      <div id="assign-action-spinner-content">
+                                          <img src="/img/analytics/reportbuilder/icons/spinner32.gif"
+                                                 alt="{!$Label.VD_Processing}"
+                                              title="{!$Label.VD_Processing}" />
+                                              <span>{!$Label.VD_Processing}</span>
+                                      </div>
+                                  </div>
+                              </apex:facet>
+                          </apex:actionStatus>  
+                                <!-- Loading spinner action status End -->
+                        <!-- Main Content Start -->
+                        
+                        <apex:outputPanel id="panel1">
+                        
+                        <div ng-hide="isRemoteSiteSetting || isHTTPCalloutFail || !isValidLicense">
+                                <!-- Object selection section Start -->
+                                <div class="panel panel-inline">
+                                    <div class="panel-heading panel-heading-inline">
+                                        <div class="row" style="margin-bottom: -5px; margin-top: -15px;">
+                                            <div class="col-lg-7 col-md-7 col-sm-7">
+                                                <div class="form-group object-style">
+                                                      <div class="ui-widget">
+                                                            <input ng-bind="selectedObject" id="tags" 
+                                                            ng-keyup="complete($event)" 
+                                                            class="form-control required form-control-inline"
+                                                            placeholder="{!$Label.ObjectLabel}" 
+                                                            ng-keypress="showEntered($event)"
+                                                            style="width: 100% !important;"/>
+                                                       </div>
+                                                </div>
+                                                
+                                                <div class="form-group small" style="display: inline-block;">
+                                                     <!-- For showing owd for angular search -->
+                                                     <div class="owdForObject1">
+                                                       <apex:outputPanel id="selectOWD1">
+                                                            <div  ng-show="showOwdPicklist">
+                                                                <select id="selectedValue" ng-change="getValue();" ng-model="selectedOWDValue"
+                                                                    class="form-control required owdForAnObjectClass selectStyle fa fa-question-circle tooltip-icon" 
+                                                                    style="width: 221px;height:30px; margin-top: 12px; display: inline-block; vertical-align:bottom;  ">
+                                                                    <option value="" disabled="disabled" 
+                                                                            selected="selected" hidden="hidden">{!$Label.OWDPlaceholder}</option>
+                                                                    <option class="optionStyle" value="Public Read Only">{!$Label.OWDValue}</option>
+                                                                    <option class="optionStyle" value="Private">{!$Label.OWDValue1}</option>
+                                                                    
+                                                                </select>
+                                                                  <img id="imageId" src="{!URLFOR($Resource.HelpIcon)}" title="{!$Label.HelpText}"/>
+                                                            </div>
+                                                         </apex:outputPanel>
+                                                         <div styleClass="width-div-panel">
+                                                            <p id="owdError" class="error-field" style="color:white; margin: 5px 0 10px;"></p>
+                                                        </div>
+                                                     </div>
+                                                     <!-- End -->
+                                                </div>
+                                            </div>
+                                            <div ng-show="objectName" class="col-lg-5 col-md-5 col-sm-5">
+                                            <div class="showFilters">
+                                                    <div style="float:right;">
+                                                        <div class="searchPanel" ng-show="objectName" style="display:inline-block;">
+                                                        <div class="form-group" style="margin-top:7px; margin-right: 30px;">
+                                                           <img src="{!URLFOR($Resource.SearchIcon)}" class="search-icon" />
+                                                           <input type="text" ng-model="searchStr"
+                                                           class="form-control required"  ng-keyup="applyFilters();"
+                                                           placeholder="Field Label / API Name" id="searchTxt"  style="width:185px;"
+                                                            />
+                                                           
+                                                         </div>
+                                                    </div>
+                                                   <div ng-show="objectName" class="sortPanel" style="vertical-align: bottom;display: inline-block;">
+                                                     <a href="#" ng-click="orderByField='fieldLabel'; reverseSort = !reverseSort" style="color:white;">
+                                                       <span ng-show="orderByField == 'fieldLabel'">
+                                                           <span ng-show="!reverseSort">
+                                                                 <img src="{!URLFOR($Resource.DescendingIcon)}"
+                                                                     class="fa fa-question-circle tooltip-icon" title="{!$Label.SortDescending}"/>
+                                                           </span>
+                                                           <span ng-show="reverseSort">
+                                                                 <img src="{!URLFOR($Resource.AscendingIcon)}" 
+                                                                     class="fa fa-question-circle tooltip-icon" title="{!$Label.SortAscending}"/>
+                                                            </span>
+                                                       </span>
+                                                       </a>
+                                                 </div>
+                                          
+                                        <!--   Select / Deselect All Checkbox Start -->
+                                          
+                                             <div class="checkBoxPanel" style="display: inline-block; vertical-align: bottom;
+                                                                               margin-left: 20px;">
+                                               <div class="select-all-container base-checkbox select-all-checkbox base-checkbox-inline" style="width: 80%;">
+                                                   <div class="check-employee">
+                                                       <apex:outputPanel id="selectDeselectPanelId">
+                                                           <input id="CompleteselectAll" type="checkbox" 
+                                                                   class="checkboxClass-inline checkboxClass selectDeselectAll fa fa-question-circle tooltip-icon" 
+                                                                   title="{!$Label.SelectDeselect}"
+                                                                   ng-model="isCheckboxSelected" ng-change="selectAllCheckbox()"/>
+                                                                   <!--<span class="selectALLSpan">Select All</span>-->
+                                                                   <label ng-show="isCheckboxSelected" class="selectALLSpan"> 
+                                                                        {!$Label.DeselectAll}                  
+                                                                   </label>
+                                                                   <label ng-show="!isCheckboxSelected" class="selectALLSpan"> 
+                                                                        {!$Label.SelectAll}                     
+                                                                   </label>
+                                                         </apex:outputPanel>    
+                                                   </div>
+                                               </div>
+                                           </div>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                     </div>
+                                    <!-- Object selection section End -->
+                                    <apex:outputPanel id="MainOutputPanal" styleClass="outputclass">
+                                        <div ng-show="objectName" id="fieldSection">
+                                            <div class="panel-body panel-body-inline">
+                                            <!-- Field display section Start -->
+                                            <apex:outputPanel id="resultPanel">
+                                                <div ng-show="objectName" class="field-table-container" style="width:100%">
+                                                <div class="highlight" ng-show="objectField.isSelected"></div>
+                                                    <div style="display:inline-block" ng-style="{ 'width': 100/{!$Label.ColumnsToDisplay} + '%' }" 
+                                                         ng-repeat="objectField in lstObjectFields | orderBy:orderByField:reverseSort | firstPage:currentPage*pageSize | limitTo:pageSize track by $index">
+                                                         <div ng-style="{border: (objectField.isSelected) == true ? '1px solid #eee' : '1px solid #fff'}" style="margin-right: 10px;margin-bottom: 10px">
+                                                            <div class="base-checkbox">
+                                                                <div class="check-employee">
+                                                                      <input type="checkbox" ng-model="objectField.isSelected" 
+                                                                       Class="checkboxClass-inline checkboxClass selectDeselectAll"
+                                                                       ng-change="setSelectOrDeselectAll()"/>
+                                                                    <label class="fieldLabel-inline">{{objectField.fieldLabel}} 
+                                                                    <span>{{objectField.fieldApiName}}</span>
+                                                                    </label> 
+                                                                </div>
+                                                            </div>
+                                                            <label ng-show="objectField.isSelected" class="switch">
+                                                              <input ng-change="hideError()" type="checkbox" ng-model="objectField.fieldToggle">
+                                                              <div class="slider round"></div>
+                                                              </input>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                  </div>
+                                          <!-- Pagination for records -->
+                                          <div class="pagination hidden-element border-top-solid"
+                                              ng-show="lstObjectFields.length > 0">
+                                              <div class="page-counter font-bold">
+                                                  {!$Label.VD_Showing} &nbsp; {{ ((currentPage*pageSize)+1) }}
+                                                  &nbsp; {!$Label.VD_Hyphen} &nbsp; <span
+                                                      ng-if="(pageSize*(currentPage+1))<=lstObjectFields.length">{{(pageSize*(currentPage+1))}}
+                                                  </span> <span
+                                                      ng-if="(pageSize*(currentPage+1))>lstObjectFields.length">{{lstObjectFields.length}}
+                                                  </span>{!$Label.VD_Of} {{lstObjectFields.length}}
+                                                  {!$Label.Fields}
+                                              </div>
+                                              <div class="page-actions">
+                                                  <!-- Pagination section Start -->
+                                                  <!-- Please keep the inline style in this section as it fails to apply when added to stylesheet. -->
+                                                  <apex:outputPanel id="navigateButtons">
+                                                      <!-- First Page Button -->
+                                                      <apex:commandButton title="{!$Label.ufht__first}"
+                                                          image="{!URLFOR($Resource.BootStrap,'/bootstrapNew/images/First-arrow.png')}"
+                                                          styleclass="first-btn btn btn-default"
+                                                          reRender="renderHyperLink"
+                                                          style="background-color:#fff !important;
+                                                          border: none; vertical-align: bottom;"
+                                                          html-ng-disabled="currentPage == 0"
+                                                          html-ng-click="paginationForAllButton(currentPage=0);"
+                                                          status="actStatusId" />
+                                                      <!-- Previous Page Button -->
+                                                      <apex:commandButton title="{!$Label.ufht__previous}"
+                                                          image="{!URLFOR($Resource.BootStrap,'/bootstrapNew/images/previous-arrow.png')}"
+                                                          styleclass="previous-btn btn btn-default"
+                                                          reRender="renderHyperLink"
+                                                          style="background-color:#fff !important;
+                                                          border: none; vertical-align: bottom;"
+                                                          html-ng-disabled="currentPage == 0"
+                                                          html-ng-click="paginationForAllButton(currentPage-1);"
+                                                          status="actStatusId" />
+                                                      <!-- Next Page Button -->
+                                                      <apex:commandButton title="{!$Label.ufht__next}"
+                                                          image="{!URLFOR($Resource.BootStrap,'/bootstrapNew/images/next-arrow.png')}"
+                                                          styleclass="next-btn btn btn-default"
+                                                          reRender="renderHyperLink"
+                                                          style="background-color:#fff !important;
+                                                          border: none; vertical-align: bottom;"
+                                                          html-ng-disabled="currentPage >= lstObjectFields.length/pageSize - 1"
+                                                          html-ng-click="paginationForAllButton(currentPage+1);"
+                                                          status="actStatusId" />
+                                                      <!-- Last Page Button -->
+                                                      <apex:commandButton title="{!$Label.ufht__last}"
+                                                          image="{!URLFOR($Resource.BootStrap,'/bootstrapNew/images/latest-arrow.png')}"
+                                                          styleclass="last-btn btn btn-default"
+                                                          reRender="renderHyperLink"
+                                                          style="background-color:#fff !important;
+                                                          border: none; vertical-align: bottom;"
+                                                          html-ng-disabled="currentPage >= lstObjectFields.length/pageSize - 1"
+                                                          html-ng-click="paginationForAllButton(noOfPages - 1);"
+                                                          status="actStatusId" />
+                                                  </apex:outputPanel>
+                                                  <!-- Pagination buttons End -->
+                                                  <!--if the inline css is moved in class it breakes because another CSS overrides buttons style -->
+                                              </div>
+                                          </div>
+                                         <apex:outputpanel id="buttonSectionID">
+                                             <div class="final-btns">
+                                                 <!-- Save button Start -->
+                                                 <input value="Save" type="button" ng-click="checkOWDValue()" 
+                                                 class="btn btn-sm btn-primary SaveSettingButtonStyle save-btn-inline"
+                                                 ng-show="lstObjectFields.length > 0"/>
+                                                 <!-- Save button End -->
+                                             </div>
+                                         </apex:outputpanel>
+                                    </apex:outputPanel>
+                                </div>
+                                </div>
+                                </apex:outputPanel>
+                               </div>
+                               <div class="dialog-footer-inline"></div>
+                            </div>
+                           </apex:outputPanel>
+                        <!-- Main Content End -->
+                        </div>
+                    </apex:form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        $( document ).ready(function() {
+                $('#showRemotingMessage').hide();
+                 //$('.imageTitle').tooltip({ title: '<b style="color: red">Tooltip</b> <i>text</i>' });
+                 
+            });
+            $(function () {
+              $.widget("ui.tooltip", $.ui.tooltip, {
+                  options: {
+                      content: function () {
+                          return $(this).prop('title');
+                      }
+                  }
+              });
+              
+              $('#imageId').tooltip({trigger: "hover" });
+              $('#imageId1').tooltip({trigger: "hover" });
+          });
+          function renewalLicense() {
+            renewalPackage();
+            return false;
+        }
+    </script>
+</apex:page>

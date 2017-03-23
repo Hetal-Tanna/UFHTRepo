@@ -1,0 +1,705 @@
+<!--
+    * @Page Name: Ultra_Setup
+    * @Description: Designed Visualforce page to setup the object's fields
+    *               for tracking their History. This page shows all updatable objects and
+    *               their updatable fields with checkboxes. User can paginate through the fields.
+    *               Page has functionality to configure the display layout of fields.
+    * ===================================================================================================
+    *       Version   | Date        | Author             | Comments
+    * ---------------------------------------------------------------------------------------------------
+    *       1.0       | 15/11/2015  | Eternus Solutions  | 1. Created page
+    * ===================================================================================================
+    -->
+<apex:page controller="UltraSetupControllerClone" docType="html-5.0"
+    standardStylesheets="false" sidebar="false"
+    tabStyle="Setup_Field_History_Clone__tab">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" cache="true" />
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css" />
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <script src="https://code.jquery.com/ui/1.11.2/jquery-ui.js"></script>
+    
+    <!-- Including Bootstrap CSS Start -->
+    <link href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/css/bootstrap.min.css')}" rel="stylesheet"/>
+    <link href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/font-awesome/css/font-awesome.min.css')}" rel="stylesheet"/>
+    <link href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/css/landing-page1.css')}" rel="stylesheet" />
+    <!-- Including Bootstrap CSS End -->
+
+    <!-- Importing jQuery UI CSS Start (Necessary to be included from CDN) -->
+    <link href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css" rel="stylesheet" />
+    <!-- Importing jQuery UI CSS End -->
+
+    <!-- Including Custom CSS Start -->
+    <link href="{!URLFOR($Resource.Ultra_Css)}" rel="stylesheet" />
+    <!-- Including Custom CSS End -->
+
+    <!-- Including jQuery Start -->
+    <script src="{!URLFOR($Resource.UFHTjQueryResources, '/js/jquery.min.js')}" />
+    <!-- Including jQuery End -->
+
+    <!-- Including Bootstrap JS Start -->
+    <script src="{!URLFOR($Resource.BootStrap, '/bootstrapNew/js/bootstrap.min.js')}" />
+    <!-- Including Bootstrap JS End -->
+
+    <!-- Importing jQuery UI JS Start (Necessary to be included from CDN) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js" />
+    <!-- Importing jQuery UI JS End -->
+
+    <!-- Including connection.js (Provided by SFDC) Start -->
+    <script src="/soap/ajax/26.0/connection.js" />
+    <!-- Including connection.js (Provided by SFDC) End -->
+  
+    <style>
+        .progress-bar.active, .progress.active .progress-bar {
+        -webkit-animation: progress-bar-stripes 2s linear infinite;
+        -o-animation: progress-bar-stripes 2s linear infinite;
+        animation: progress-bar-stripes 2s linear infinite;
+    }
+    .progress-bar-striped, .progress-striped .progress-bar {
+        background-image: -webkit-linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+        background-image: -o-linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+        background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+        -webkit-background-size: 40px 40px;
+        background-size: 40px 40px;
+    }
+    
+    /*.base-checkbox label:before {
+         border: none !important
+    }*/
+     .switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      /*height: 34px;*/
+    }
+    .switch input {display:none;}
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      -webkit-transition: .4s;
+      transition: .4s;
+        height: 26px;
+        width: 50px;
+    }
+    .slider:before {
+     position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 2px;
+        bottom: 3px;
+        background-color: white;
+        -webkit-transition: .4s;
+        transition: .4s;
+    }
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+    input:focus + .slider {
+      box-shadow: 0 0 1px #2196F3;
+    }
+    input:checked + .slider:before {
+      -webkit-transform: translateX(26px);
+      -ms-transform: translateX(26px);
+      transform: translateX(26px);
+    }
+    
+    .slider.round {
+      border-radius: 34px;
+      width: 50px;
+    }
+    .slider.round:before {
+      border-radius: 50%;
+    }
+   /* .columns {
+        width:100%;
+        columns: {!$Label.ColumnsToDisplay};
+        
+    }
+    .base-checkbox label {
+       margin: -3px 0px 0 30px !important;
+    }
+    .base-checkbox span {
+        margin: 0 0 0 30px !important;
+    }
+    .CheckboxColumnStyle {
+       height: 58px !important;
+    } */
+    
+    .field-table-container {
+        padding-left: 27px;
+    }
+    .base-checkbox span {
+        margin: 0 0 0 11px !important;
+    }
+    .base-checkbox label:after {
+        padding: 5px 0 0 5px!important;
+    }
+    .base-checkbox{
+        margin-top: 5px!important;
+        margin-bottom: 18px!important;
+    }
+    
+    </style>
+        <script>
+            var app = angular.module('app',[]);
+            //app.constant('NUMBEROFCOLUMNS', '4');
+            /**
+            * @Description: Angular filter for the first page
+            * @Param: NA
+            * @Return: NA
+            * @Date: 30/06/2016
+            **/
+            app.filter('firstPage', function() {
+                return function(input, start) {
+                    start = +start;
+                    return input.slice(start);
+                }
+            });
+            app.controller('ctrl',function($scope) {
+                $scope.objectName = '';
+                $scope.selectedObject = '';
+                $scope.currentPage = 0;
+                $scope.noOfPages = 0;
+                $scope.isCheckboxSelected = true;
+                $scope.pageSize =  {!$Label.RowsToDisplay} * {!$Label.ColumnsToDisplay};
+                $scope.lstObjectFields = [];
+                $scope.array = [];
+                $scope.removeSquareBracket = '{!strOjects}'.replace("[","");
+                $scope.removeEndSquareBracket = $scope.removeSquareBracket.replace("]","");
+                $scope.removeQuotes = $scope.removeEndSquareBracket.replace(/["]+/g, "");
+                $scope.availableTags = $scope.removeQuotes.split(',');
+                
+                $scope.range = function(min, max, step) {
+                    step = step || 1;
+                    var input = [];
+                    for (var i = min; i <= max; i += step) {
+                        input.push(i);
+                    }
+                    return input;
+                }
+                
+                /**
+                 * @Description: Function to get the triggerable object from contoller to autocomplete object name.
+                 * @Param: Object Name
+                 * @Return: NA
+                 * @Date: 1/16/2016
+                **/
+                $scope.complete=function($event) {
+                    $('.owdForObject1').show();
+                    $( "#tags" ).autocomplete({
+                        source: $scope.availableTags,
+                        select: function( event, ui ) {
+                              $("input[id$='tags']").val(ui.item.value);
+                              $scope.objectName = $("input[id$='tags']").val();
+                              console.log('%% $scope.objectName',$scope.objectName);
+                              /*$(".owdForAnObjectClass option").each(function() {
+                                   if (this.value == '') {
+                                       this.selected = true;
+                                   }
+                              });*/
+                              /* getSearchResult();*/
+                              $scope.getFields();
+                          },
+                          autoFocus : true
+                    });
+    
+                    $scope.selectedObject = $scope.availableTags[0];
+                    if(j$("input[id$='tags']").val() == '' || ($event.key == 'Backspace' || $event.key == 'Delete')) {
+                          j$('.owdForObject1').hide();
+                          j$(".outputclass").hide();
+                    }
+    
+                    /*$scope.showEntered=function($event) {
+                        if($event.keyCode == 13) {
+                           var selectedObject = $scope.selectedObject;
+                           console.log('Entered Event');
+                           if(j$("input[id$='tags']").val() == '') {
+                                return false;
+                           }
+                        }
+                    }*/
+                }
+
+                /**
+                 * @Description: Gets the selected object related fields
+                 * @Param: Object Name
+                 * @Return: NA
+                 * @Date: 1/16/2016
+                **/
+                $scope.getFields = function() {
+                    Visualforce.remoting.Manager.invokeAction(
+                     '{!$RemoteAction.UltraSetupControllerClone.getFieldsList1}',
+                     $scope.objectName,
+                        function(result, event) {
+                            if (event.status) {
+                                $scope.lstObjectFields = result;
+                                //$scope.isCheckboxSelected = true;
+                                angular.forEach($scope.lstObjectFields, function(value, key){
+                                    if(value.isSelected != true)
+                                        $scope.isCheckboxSelected = true;
+                                        console.log('$$$ Checkbox Selected',$scope.isCheckboxSelected);
+                                });
+                                $scope.numberOfPages($scope.lstObjectFields.length);
+                                //$scope.getNumberOfColumnsRowsToDisplay();
+                                $scope.$apply();
+                            } else {
+                            }
+                        }, {
+                            escape: false
+                           }
+                    );
+                }
+
+                /**
+                 * @Author: Eternus Solutions
+                 * @Description: Method to select all checkbox when click on select all button
+                 * @Param:
+                 * @Return:
+                 * @Date: 18/1/2016
+                **/
+                $scope.selectAllCheckbox = function() {
+                console.log('%% checkbox',$scope.isCheckboxSelected);
+                    if($scope.lstObjectFields != null) {
+                        angular.forEach($scope.lstObjectFields, function(value, key) {
+                            value.isSelected = $scope.isCheckboxSelected;
+                            console.log('%% Selected Value',value.isSelected);
+                        });
+                    }
+                };
+
+                /**
+                 * @Author: Eternus Solutions
+                 * @Description: Method to select all and deselect all checkbox when any field is selected or deselected
+                 * @Param:
+                 * @Return:
+                 * @Date: 18/1/2016
+                 **/
+                $scope.setSelectOrDeselectAll = function() {
+                    if($scope.lstObjectFields != null) {
+                        $scope.isCheckboxSelected = true;
+                        angular.forEach($scope.lstObjectFields, function(value, key) {
+                            if(value.isSelected == false){
+                                $scope.isCheckboxSelected = false;
+                                console.log('%% Selected Value',$scope.isCheckboxSelected);
+                            }
+                        });
+                    }
+               }
+                
+                /**
+                 * @Description: For next previous pagination button sets the page and
+                 *               shows the loading symbole
+                 * @Param: Current page value
+                 * @Return: NA
+                 * @Date: 1/16/2016
+                 **/
+                $scope.paginationForAllButton = function(
+                        currentPageValue) {
+                    $scope.showLoader = true;
+                   // $timeout(function(result) {
+                        $scope.currentPage = currentPageValue;
+                        $scope.showLoader = false;
+                   // }, 2000);
+
+                }
+                
+                /**
+                 * @Description: Returns the number of pages
+                 * @Param: Total count
+                 * @Return: NA
+                 * @Date: 01/16/2016
+                 **/
+                $scope.numberOfPages = function(totalItemCount) {
+                    $scope.noOfPages = Math.ceil(totalItemCount/$scope.pageSize);
+                    if ($scope.noOfPages <= $scope.currentPage) {
+                        $scope.currentPage = $scope.noOfPages - 1;
+                    }
+                    if ($scope.noOfPages === 0) {
+                        $scope.currentPage = 0;
+                    }
+                }
+
+                /*$scope.getNumberOfColumnsRowsToDisplay = function() {
+                    $scope.numberOfColumnsPicklistValue = {!$Label.ColumnsToDisplay};
+                    $scope.numberOfFieldsPerColumnsPicklistValue = {!$Label.RowsToDisplay};
+                    $scope.pageSize = ($scope.numberOfFieldsPerColumnsPicklistValue) * ($scope.numberOfColumnsPicklistValue);
+                }*/
+            });
+
+  </script>
+
+    <div class="bs PageSizeDiv PageSizeDiv-inline">
+        <div class="content-section-a content-section-a-inline">
+            <div class="container">
+                <div class="content content-inline">
+                    <apex:form id="frm" styleClass="frm-inline">
+                     <div ng-app="app" ng-controller="ctrl">
+                        <!-- Header Content Start -->
+                        <div>
+                            <apex:image url="{!URLFOR($Resource.HistoricalDataImage) }"
+                                styleClass="header-image" />
+                            <apex:outputLabel value="{!$Label.Setup_Page_Title}"
+                                styleClass="PageTitleLabelStyle" />
+                            <apex:outputPanel id="panel2">
+                                <!-- No remote site setting panel Start -->
+                                <apex:outputPanel id="panelRemoteSiteSettingMessage1"
+                                    rendered="{! isRemoteSiteSettings}">
+                                    <div class="RemoteSiteSettingMsg">
+                                        <div class="remoteSiteFont">
+                                            {!$Label.RemoteSiteSettingNotAddedPart1}&nbsp;
+                                            <apex:commandLink value="{!$Label.RemoteSiteSettingNotAddedLinkText}"
+                                                reRender="hidden" onclick="popupRemotesiteSettingPage();" />
+                                            {!$Label.RemoteSiteSettingNotAddedPart2} <span
+                                                class="font-bold">{!$Label.RemoteSiteSettingNotAddedPart3}</span>
+                                            {!$Label.RemoteSiteSettingNotAddedPart4}
+                                        </div>
+                                    </div>
+                                </apex:outputPanel>
+                             </apex:outPutpanel>
+                            <!-- No remote site setting panel End -->
+                        </div>
+                        <!-- Header Content End -->
+                         <!-- Page Messages Start -->
+                        <apex:outputPanel id="checkDeploymentStatus">
+                            <apex:actionPoller action="{!checkTriggerDeploymentStatus}" rendered="{!enablePollar}"
+                                               status="counterStatus"
+                                               reRender="checkDeploymentStatus,MessagePanel1,progressStatus" 
+                                               interval="5"/>
+                            <apex:actionStatus layout="block" id="counterStatus" rendered="{!enablePollar}">
+                                <apex:facet name="start">
+                                    <div id="assign-action-spinner-main">
+                                        <div id="assign-action-spinner-content-Deploy">
+                                            {!$Label.DeploymentWaitingMessage} <br/><br/>
+                                            <div class="progress">
+                                                <div class="progress-bar progress-bar-striped active" 
+                                                     role="progressbar" 
+                                                     aria-valuenow="{!progressCounter}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="50" 
+                                                     style="width:{!progressCounter}%">
+                                                  {!progressCounter}%
+                                                </div>
+                                            </div>
+                                         </div>
+                                     </div>
+                                </apex:facet>
+                                <apex:facet name="stop">
+                                    <div id="assign-action-spinner-main">
+                                        <div id="assign-action-spinner-content-Deploy">
+                                            {!$Label.DeploymentWaitingMessage} <br/><br/>
+                                            <div class="progress">
+                                                <div class="progress-bar progress-bar-striped active" 
+                                                     role="progressbar" 
+                                                     aria-valuenow="{!progressCounter}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="50" 
+                                                     style="width:{!progressCounter}%">
+                                                  {!progressCounter}%
+                                                </div>
+                                            </div>
+                                         </div>
+                                     </div>
+                                </apex:facet>
+                            </apex:actionStatus> 
+                        </apex:outputPanel>
+                        
+                        <apex:outputPanel id="MessagePanel" >
+                            <span class="font-bold"> <apex:pageMessages escape="false" rendered="{!!isHTTPCalloutFail}"/></span>
+                        </apex:outputPanel>
+                        <apex:outputPanel id="MessagePanel1">
+                            <span class="font-bold"> <apex:pageMessages escape="false" rendered="{!!isHTTPCalloutFail}"/></span>
+                        </apex:outputPanel>
+                         <apex:outputPanel id="MessagePane2" >
+                            <span class="font-bold"> <apex:pageMessages escape="false" rendered="{!isHTTPCalloutFail}"/></span>
+                        </apex:outputPanel>
+                        <!-- Page Messages End -->
+                        <apex:actionStatus id="actStatusCounter" layout="block"
+                                    onstop="endLoading();">
+                            <apex:facet name="start">
+                               <apex:outPutPanel rendered="{!enablePollar}">
+                                <div id="assign-action-spinner-main">
+                                        <div id="assign-action-spinner-content-Deploy">
+                                            {!$Label.DeploymentWaitingMessage} <br/>
+                                                <div class="progress">
+                                                    <div class="progress-bar progress-bar-striped active" 
+                                                         role="progressbar" 
+                                                         aria-valuenow="{!progressCounter}" 
+                                                         aria-valuemin="0" 
+                                                         aria-valuemax="50" 
+                                                         style="width:{!progressCounter}%">
+                                                      {!progressCounter}%
+                                                    </div>
+                                                </div>
+                                         </div>
+                                     </div>
+                                    </apex:outPutPanel>
+                                    <apex:outPutPanel rendered="{!!enablePollar}">
+                                     
+                                     <div id="assign-action-spinner-main">
+                                          <div id="assign-action-spinner-content-Deploy">
+                                              {!$Label.DeploymentWaitingMessage} <br/><br/>
+                                          </div>
+                                      </div>
+                                    </apex:outPutPanel>
+                            </apex:facet>
+                        </apex:actionStatus> 
+                         <!-- Loading spinner action status Start -->
+                          <apex:actionStatus id="actStatusId" layout="block"
+                              onstop="endLoading();">
+                              <apex:facet name="start">
+                                  <div id="assign-action-spinner-main">
+                                      <div id="assign-action-spinner-content">
+                                          <img src="/img/analytics/reportbuilder/icons/spinner32.gif"
+                                                 alt="{!$Label.VD_Processing}"
+                                              title="{!$Label.VD_Processing}" />
+                                              <span>{!$Label.VD_Processing}</span>
+                                      </div>
+                                  </div>
+                              </apex:facet>
+                          </apex:actionStatus>  
+                                <!-- Loading spinner action status End -->
+                        <!-- Main Content Start -->
+                        <apex:outputPanel id="panel1">
+                        <apex:pageBlock id="pageblock0" mode="maindetail"
+                               rendered="{!AND(NOT(isRemoteSiteSettings), NOT(isHTTPCalloutFail))}">
+                                <!-- Object selection section Start -->
+                                <div class="panel panel-inline">
+                                    <div class="panel-heading panel-heading-inline">
+                                        <div class="row" style="margin-bottom: -5px; margin-top: -15px;">
+                                            <div class="col-lg-3 col-md-3 col-sm-3">
+                                                <div class="form-group" style="margin-top:7px">
+                                                      <div class="ui-widget">
+	                                                        <input ng-bind="selectedObject" id="tags" 
+	                                                        ng-keyup="complete($event)" 
+	                                                        Class="form-control required form-control-inline"
+	                                                        placeholder="{!$Label.ObjectLabel}" 
+	                                                        ng-keypress="showEntered($event)"/>
+                                                       </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-3 col-md-3 col-sm-3" style="margin-left:270px">
+                                                <div class="form-group small">
+                                                     <!-- For showing owd for angular search -->
+                                                     <div class="owdForObject1" style="display:none;">
+                                                       <apex:outputPanel id="selectOWD1">
+                                                            <apex:outputPanel >
+                                                                <label class="asterix">Choose an OWD
+                                                                </label>
+                                                                <apex:selectList value="{!selectedOWD}"
+                                                                    multiselect="false" size="1" title="Choose an OWD"
+                                                                    styleClass="form-control required owdForAnObjectClass"
+                                                                    onchange="hideErrorDiv();">
+                                                                    <apex:selectOptions value="{!owdForStandardObject}" />
+                                                                </apex:selectList> 
+                                                            </apex:outputPanel>
+                                                         </apex:outputPanel>
+                                                         <div styleClass="width-div-panel">
+                                                            <p id="owdError" class="error-field" style="color:white"></p>
+                                                        </div>
+                                                     </div>
+                                                     <!-- End -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Object selection section End -->
+                                    
+                                    <apex:outputPanel id="MainOutputPanal" styleClass="outputclass"
+                                        onclick="onSelectAll();">
+                                        <div ng-show="objectName" id="fieldSection">
+                                            <div class="panel-body panel-body-inline">
+                                                <!-- Select / Deselect All Checkbox Start -->
+                                                <div class="select-all-container">
+                                                    <apex:outputlabel value="{!$Label.Ultra_Select_Fields}"
+                                                        styleClass="FieldSectionTitleStyle" />
+                                                    <div
+                                                        class="base-checkbox select-all-checkbox base-checkbox-inline">
+                                                        <div class="check-employee">
+                                                            <apex:outputPanel id="selectDeselectPanelId">
+                                                            {{isCheckboxSelected}}
+                                                                <input id="CompleteselectAll" type="checkbox" 
+                                                                        class="checkboxClass-inline checkboxClass selectDeselectAll"
+                                                                        ng-model="isCheckboxSelected" ng-change="selectAllCheckbox()"/>
+                                                                <div ng-show="!isCheckboxSelected"> 
+                                                                     <label class="SelectAllLabelStyle select-all-checkbox selectDeselectAll"> 
+                                                                     {!$Label.SelectAll}</label> 
+                                                                </div>
+                                                                <div ng-show="isCheckboxSelected"> 
+                                                                         <label class="SelectAllLabelStyle select-all-checkbox selectDeselectAll">
+                                                                         {!$Label.DeselectAll}</label>
+                                                                </div>
+                                                              </apex:outputPanel>    
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                    <!-- Field display section Start -->
+                                    <apex:outputPanel id="resultPanel">
+                                        <div ng-show="objectName" class="field-table-container" style="width:100%">
+                                            <div style="display:inline-block" ng-style="{ 'width': 100/4 + '%' }" 
+                                                 ng-repeat="objectField in lstObjectFields | firstPage:currentPage*pageSize | limitTo:pageSize track by $index">
+                                                <div class="base-checkbox">
+                                                    <div class="check-employee">
+                                                          <input type="checkbox" ng-model="objectField.isSelected" 
+                                                           Class="checkboxClass-inline checkboxClass selectDeselectAll"
+                                                           ng-change="setSelectOrDeselectAll()"/>
+                                                        <label class="fieldLabel-inline">{{objectField.fieldLabel}} </label> 
+                                                        <span>{{objectField.fieldApiName}}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                          </div>
+                                          <!-- Pagination for records -->
+                                          <div class="pagination hidden-element border-top-solid"
+                                              ng-show="lstObjectFields.length > 0">
+                                              <div class="page-counter font-bold">
+                                                  {!$Label.VD_Showing} &nbsp; {{ ((currentPage*pageSize)+1) }}
+                                                  &nbsp; {!$Label.VD_Hyphen} &nbsp; <span
+                                                      ng-if="(pageSize*(currentPage+1))<=lstObjectFields.length">{{(pageSize*(currentPage+1))}}
+                                                  </span> <span
+                                                      ng-if="(pageSize*(currentPage+1))>lstObjectFields.length">{{lstObjectFields.length}}
+                                                  </span>{!$Label.VD_Of} {{lstObjectFields.length}}
+                                                  {!$Label.VD_Records}
+                                              </div>
+                                              <div class="page-actions">
+                                                  <!-- Pagination section Start -->
+                                                  <!-- Please keep the inline style in this section as it fails to apply when added to stylesheet. -->
+                                                  <apex:outputPanel id="navigateButtons">
+                                                      <!-- First Page Button -->
+                                                      <apex:commandButton title="First"
+                                                          image="{!URLFOR($Resource.BootStrap,'/bootstrapNew/images/First-arrow.png')}"
+                                                          styleclass="first-btn btn btn-default"
+                                                          reRender="renderHyperLink"
+                                                          style="background-color:#fff !important;
+                                                          border: none; vertical-align: bottom;"
+                                                          html-ng-disabled="currentPage == 0"
+                                                          html-ng-click="paginationForAllButton(currentPage=0);"
+                                                          status="actStatusId" />
+                                                      <!-- Previous Page Button -->
+                                                      <apex:commandButton title="Previous"
+                                                          image="{!URLFOR($Resource.BootStrap,'/bootstrapNew/images/previous-arrow.png')}"
+                                                          styleclass="previous-btn btn btn-default"
+                                                          reRender="renderHyperLink"
+                                                          style="background-color:#fff !important;
+                                                          border: none; vertical-align: bottom;"
+                                                          html-ng-disabled="currentPage == 0"
+                                                          html-ng-click="paginationForAllButton(currentPage-1);"
+                                                          status="actStatusId" />
+                                                      <!-- Next Page Button -->
+                                                      <apex:commandButton title="Next"
+                                                          image="{!URLFOR($Resource.BootStrap,'/bootstrapNew/images/next-arrow.png')}"
+                                                          styleclass="next-btn btn btn-default"
+                                                          reRender="renderHyperLink"
+                                                          style="background-color:#fff !important;
+                                                          border: none; vertical-align: bottom;"
+                                                          html-ng-disabled="currentPage >= lstObjectFields.length/pageSize - 1"
+                                                          html-ng-click="paginationForAllButton(currentPage+1);"
+                                                          status="actStatusId" />
+                                                      <!-- Last Page Button -->
+                                                      <apex:commandButton title="Last"
+                                                          image="{!URLFOR($Resource.BootStrap,'/bootstrapNew/images/latest-arrow.png')}"
+                                                          styleclass="last-btn btn btn-default"
+                                                          reRender="renderHyperLink"
+                                                          style="background-color:#fff !important;
+                                                          border: none; vertical-align: bottom;"
+                                                          html-ng-disabled="currentPage >= lstObjectFields.length/pageSize - 1"
+                                                          html-ng-click="paginationForAllButton(noOfPages - 1);"
+                                                          status="actStatusId" />
+                                                  </apex:outputPanel>
+                                                  <!-- Pagination buttons End -->
+                                                  <!--if the inline css is moved in class it breakes because another CSS overrides buttons style -->
+                                              </div>
+                                          </div>
+                                         <apex:outputpanel id="buttonSectionID">
+                                             <div class="final-btns">
+                                                 <!-- Save button Start -->
+                                                 <apex:commandButton id="btnSave"
+                                                     onclick="checkOWDValue(); return false;"
+                                                     Value="Save"
+                                                     Title="Save Setting"
+                                                     status="actStatusCounter"
+                                                     styleclass="btn btn-sm btn-primary SaveSettingButtonStyle save-btn-inline"
+                                                  />
+                                                 <!-- Save button End -->
+                                             </div>
+                                         </apex:outputpanel>
+                                    </apex:outputPanel>
+                                </div>
+                                </div>
+                                </apex:outputPanel>
+                               </div>
+                               <div class="dialog-footer-inline"></div>
+                            </apex:pageBlock>
+                           </apex:outputPanel>
+                       
+                        <!-- Main Content End -->
+
+                        <!-- Action Funtion to call controller methods when user select object -->
+                        <apex:actionFunction name="getSearchResult"
+                            reRender="MessagePanel, MainOutputPanal,selectOWD" action="{!refresh}"
+                            status="actStatusId" oncomplete="focusOnObject(); hideMessage(); removeTitleMsg();changeSelectAllDeselectAllLabel();" />
+                        
+                        <apex:actionFunction name="getSearchResultForSave"
+                            reRender="MessagePanel, MainOutputPanal, selectOWD" action="{!refresh}"
+                            oncomplete="focusOnObject(); hideMessage(); removeTitleMsg();changeSelectAllDeselectAllLabel();" />
+                            
+                        <!-- Action Funtion to save configuration data in Configuration__c custom setting -->
+                        <apex:actionFunction name="saveAndUpdate" reRender="frm"
+                            oncomplete=" onFormRender();hideDialog();"
+                            action="{!saveAndUpdateConfigurationSetting}">
+
+                            <!-- Configuration data to be sent to controller (URL parameters) -->
+                            <apex:param name="numberOfColumnsPicklistValue" value=""
+                                assignTo="{!numberOfColumnsPicklistValue}" />
+                            <apex:param name="numberOfFieldsPerColumnsPicklistValue" value=""
+                                assignTo="{!numberOfFieldsPerColumnsPicklistValue}" />
+                            <apex:param name="numberOfRecordToDisplayPicklistValue" value=""
+                                assignTo="{!numberOfRecordToDisplayPicklistValue}" />
+                            <apex:param name="sortFieldsValue" value=""
+                                assignTo="{!sortFieldsValue}" />
+                        </apex:actionFunction>
+
+                        <!-- Get existing data from Configuration__c custom setting -->
+                        <apex:actionFunction name="setConfigData" reRender="frm"
+                            oncomplete=" onFormRender();hideDialog();"
+                            action="{!getConfigurationSettingData}" />
+
+                        <!-- Populate triggerable objects to display for autocomplete -->
+                        <apex:actionFunction name="getTriggerableObjList"
+                            action="{!getObjectList}" reRender="Panel1, MessagePanel" />
+                        
+                        <apex:actionfunction name="checkOWDAndSaveTracking" 
+                                             action="{!SelectedFieldsName}" 
+                                             reRender="panel2,checkDeploymentStatus,MessagePanel1,panel1"
+                                             onComplete="getSearchResultForSave(); focusOnObject(); hideDialog(); removeTitleMsg();"
+                                             status="actStatusCounter"
+                        />
+                        </div>
+                    </apex:form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        j$ = jQuery.noConflict();
+        function getObjectList() {
+            var apexObjectList = [];
+            <apex:repeat value="{!objList}" var="objectName">
+                apexObjectList.push('{!objectName}');
+            </apex:repeat>
+            return  apexObjectList;
+        }
+        function removeTitleMsg() {
+            j$(".messageText").find("h4").remove();
+        }
+    </script>
+
+    <!-- Including Custom JS Start -->
+    <script src="{!URLFOR($Resource.UFHTjQueryResources, '/js/UltraSetup.js')}" />
+    <!-- Including Custom JS End -->
+</apex:page>

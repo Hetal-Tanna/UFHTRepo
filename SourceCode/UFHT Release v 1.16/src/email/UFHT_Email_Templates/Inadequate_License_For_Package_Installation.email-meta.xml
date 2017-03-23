@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EmailTemplate xmlns="http://soap.sforce.com/2006/04/metadata">
+    <available>true</available>
+    <encodingKey>UTF-8</encodingKey>
+    <name>Inadequate_License_For_Package_Installation</name>
+    <style>none</style>
+    <subject>Inadequate licenses for Ultra FieldHistory package</subject>
+    <textOnly>Ultra FieldHistory Tracker
+
+Dear {!$User.Name},
+
+You do not have adequate licenses for Ultra FieldHistory Tracker package. Please contact Eternus Sales Team for more information.
+
+Regards, 
+Ultra FieldHistory Tracker Team 
+Powered by: Eternus Solutions Pvt. Ltd.
+
+
+Disclaimer: This is an auto-generated mail. Please do not reply</textOnly>
+    <type>custom</type>
+</EmailTemplate>

@@ -1,0 +1,201 @@
+<apex:component controller="AggregatePieChartController">
+<!--     <script src="https://code.jquery.com/jquery-1.9.1.min.js"></script> -->
+        <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+            
+    <style>
+       
+          .closebtn {
+                        position: relative;
+                        top: -25px !important;
+                        right : -290px !important;
+                        font-size: 20px !important;
+                        margin-left: 53px;
+                        margin-right: 11px;
+                        
+          }
+          .align-dashboard {
+                               vertical-align: middle;
+          }
+    </style>
+    <div class="searchBox searchbox-shadow">
+        <div class="chart-panel">
+            <div class="chart-toggle" id="switch-toggle" style="width: 35px; height: 218px;"><img src="{!URLFOR($Resource.LeftWhiteArrow)}"  style="width: 10px;"/>&thinsp;
+                
+                <h5 style="color: white; margin: -6px 0 3.5px 0; float: left; font-family: serif !important; transform: rotate(90deg);">D</h5>
+                <h5 style="color: white; margin: 0 0 3.5px 0; float: left; font-family: serif !important; transform: rotate(90deg);">A</h5>
+                <h5 style="color: white; margin: 0 0 3.5px 0; float: left; font-family: serif !important; transform: rotate(90deg);">S</h5>
+                <h5 style="color: white; margin: 0 0 3.5px 0; float: left; font-family: serif !important; transform: rotate(90deg);">H</h5>
+                <h5 style="color: white; margin: 0 0 3.5px 0; float: left; font-family: serif !important; transform: rotate(90deg);">B</h5>
+                <h5 style="color: white; margin: 0 0 3.5px 0; float: left; font-family: serif !important; transform: rotate(90deg);">O</h5>
+                <h5 style="color: white; margin: 0 0 3.5px 0; float: left; font-family: serif !important; transform: rotate(90deg);">A</h5>
+                <h5 style="color: white; margin: 0 0 3.5px 0; float: left; font-family: serif !important; transform: rotate(90deg);">R</h5>
+                <h5 style="color: white; margin: 1px 0 3.5px 0; float: left; font-family: serif !important; transform: rotate(90deg);">D</h5>
+        </div> 
+        
+        <div class="chart-slide" id="panel2">
+            <script type="text/javascript">
+    
+            // Load the Visualization API and the piechart package.  
+            google.load("visualization", "1", {packages:["corechart"]});
+            // Set a callback to run when the Google Visualization API is loaded.
+            google.setOnLoadCallback(drawPieChart);
+            var topLevel = true;
+            
+            // Function to draw Pie Chart
+            function drawPieChart() {
+                
+                //FetchData from the method fetchContainerData from PieChartController
+                UFHT.AggregatePieChartController.fetchContainerData(
+                    //Remote Function
+                    function(result, event) {
+                        // load Column chart
+                        var data1 = new google.visualization.DataTable();
+                        var data = new google.visualization.DataTable();
+                        var kilobyte = 1024;
+                        var megabyte = kilobyte * 1024;
+                        var precision = 2;
+                        // Prepare table model for chart with columns
+                        data1.addColumn('string', 'ObjectName');    
+                        data1.addColumn('number', 'Size');
+                        data1.addColumn({type: 'string', role: 'tooltip' , p : {'html': true}});
+                        
+                        data.addColumn('string', 'ObjectName'); 
+                        data.addColumn('string', 'RecordType');
+                        data.addColumn('number', 'Size');
+                        data.addColumn({type: 'string', role: 'tooltip' , p : {'html': true}});
+                        for(var i=0;i<result.length;i++) {
+                           
+                            var r = result[i];
+                            var HistoryTrackingEnable = (r.Is_Tracking_Enabled ? 'Yes' : 'No') + '';
+                            var consumption = 0;
+                            if((r.bodylength > (megabyte))) {
+                                    consumption = (r.bodylength / megabyte ).toFixed(precision) + ' MB';    
+                            }
+                            else if((r.bodylength < (megabyte))) {
+                                    consumption = (r.bodylength / kilobyte ).toFixed(precision) + ' KB';   
+                            }
+                            
+                            //The Data that is to be shown on Tooltip Hover
+                            var toolTipData = new String("Object Name: ").bold() + r.Object_Name + '</br>' + 
+                                              new String("Consumption: ").bold() + consumption + '</br>'  +  
+                                              new String("Record Count: ").bold() +r.Number_of_Records + ' </br>' +  
+                                              new String("Is History Tracked: ").bold() + HistoryTrackingEnable ;
+                            
+                            // add rows from the remoting results
+                            data1.addRow([r.Object_Name,r.bodylength, toolTipData]); 
+                            data.addRow([r.Object_Name, 'High', r.Must_Have, toolTipData]);
+                            data.addRow([r.Object_Name, 'Low', r.Good_To_Have, toolTipData]);
+                        }
+                        
+                        
+                        var aggregateData = google.visualization.data.group(data, [0], [{
+                            type: 'number',
+                            label: 'Size',
+                            column: 2,
+                            aggregation: google.visualization.data.sum
+                            
+                        }]);
+                        
+                        // Add options for view purpose of main chart
+                        var options = { tooltip: {isHtml: true ,ignoreBounds: false, text: 'both' },
+                                        sliceVisibilityThreshold: .0002,
+                                        title: 'History Storage Consumption (MB)',
+                                        'width':350,
+                                        'height':190,
+                                        'display':'block',
+                                        titleTextStyle : { fontSize: 12, bold: true },
+                                        legend: {'position':'right','alignment':'center', 'display':'block'}
+                        };
+                        // Add options for view purpose of below chart
+                        var option = { tooltip: {isHtml: true ,ignoreBounds: false, text: 'both' },
+                                title: 'Consumption By Field Criticality',
+                                'width':350,
+                                        'height':190,
+                                        'display':'block',
+                                        slices: {    
+                                                    0: { color: 'Red' },
+                                                    1: { color: 'Orange' }
+                                        },
+                                        titleTextStyle : { fontSize: 12, bold: true },
+                                        legend: {'position':'right','alignment':'center', 'display':'block'}
+                        };
+        
+                        var chart = new google.visualization.PieChart(document.getElementById('piechart'));
+                        var belowChart = new google.visualization.PieChart(document.getElementById('belowChart'));
+                        chart.draw(data1,options);
+                        
+                        function draw(category) {
+                            if(topLevel) {
+                                var view = new google.visualization.DataView(data);
+                                // use columns "Name" and "Value"
+                                view.setColumns([1, 2]);
+                                // filter the data based on the category
+                                view.setRows(data.getFilteredRows([{column: 0, value: category}]));
+                                // rename the title
+                                // draw the chart using the view
+                                chart.draw(view, options);
+                            //}
+                            } else {
+                                var view = new google.visualization.DataView(data);
+                                // use columns "Name" and "Value"
+                                view.setColumns([1, 2]);
+                                // filter the data based on the category
+                                view.setRows(data.getFilteredRows([{column: 0, value: category}]));
+                                
+    
+                                // draw the chart using the view
+                                belowChart.draw(view, option);
+                            }
+    
+                        }     
+                
+                        
+                        google.visualization.events.addListener(chart, 'select', function () {
+                            
+                            if (topLevel) {
+                            document.getElementById('switch-toggle').setAttribute("style","width:35px","height:427px");
+                            document.getElementById('belowChart').setAttribute("style","width:350px","height:190px");
+                            
+                                var selection = chart.getSelection();
+                                // drill down if the selection isnt empty
+                                if (selection.length) {
+                                    var selectedObject = '';
+                                    if (selection[0].row != null) {
+                                      // Object Label
+                                      selectedObject = data1.getFormattedValue(selection[0].row, 0);
+                                    } 
+                                    topLevel = false;
+                                    
+     
+                                    draw(selectedObject);
+                                    
+                                }
+                            }
+                            else {
+                                // go back to the top
+                                topLevel = true;
+                                //draw();
+                                chart.draw(data1,options);
+                            }
+                        });
+                
+                    },  {escape:false}
+                );
+            }
+            
+            </script>
+
+            <!-- Google Chart will be drawn in this DIV -->
+          
+            <div style="float:left; ">
+                <style>div.google-visualization-tooltip { width: 160px; height: 75px }</style>
+       
+                <div id="piechart"  style="width: 350px; height: 190px;"></div>
+                <div id="belowChart"  style="width: 0px; height: 0px;"></div>
+            </div>
+        </div>
+    </div>
+         
+    </div>
+            
+</apex:component>

@@ -1,0 +1,6 @@
+Trigger AccountHistoryTrackTrigger On Account (after Update) { 
+ if(trigger.isAfter && trigger.isUpdate){
+ DynamicTriggerGenericHandler objDataHandler = new DynamicTriggerGenericHandler();
+ objDataHandler.onUpdateStoreHistoryData(trigger.newMap, trigger.oldMap, 'Account');
+}
+}

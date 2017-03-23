@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
+    <labels>
+        <fullName>AttachmentFileName</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>AttachmentFileName</shortDescription>
+        <value>UltraHistoryData</value>
+    </labels>
+    <labels>
+        <fullName>ConfigurationMessage</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>ConfigurationMessage</shortDescription>
+        <value>Your Configuration settings have been saved...</value>
+    </labels>
+    <labels>
+        <fullName>ConfigurationPageBlockTitle</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>ConfigurationPageBlockTitle</shortDescription>
+        <value>Configure Setup Layout View</value>
+    </labels>
+    <labels>
+        <fullName>ConfigurationPageTitle</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>ConfigurationPageTitle</shortDescription>
+        <value>Configure Display Layout Settings</value>
+    </labels>
+    <labels>
+        <fullName>ConfigurationSuccessMessage</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>ConfigurationSuccessMessage</shortDescription>
+        <value>Your setting for current object and field will be lost.Do you want to Save configuration setting?</value>
+    </labels>
+    <labels>
+        <fullName>ConfigureColsAndFieldsCustomSettingRecordName</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>ConfigureColsAndFieldsCustomSettingRecordName</shortDescription>
+        <value>NumberOfColumsAndFields</value>
+    </labels>
+    <labels>
+        <fullName>DefaultFieldSortingOption</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>DefaultFieldSortingOption</shortDescription>
+        <value>Ascending</value>
+    </labels>
+    <labels>
+        <fullName>DefaultNumberOfColumnValue</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>DefaultNumberOfColumnValue</shortDescription>
+        <value>5</value>
+    </labels>
+    <labels>
+        <fullName>DefaultNumberOfFieldsPerColumnValue</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>DefaultNumberOfFieldsPerColumnValue</shortDescription>
+        <value>10</value>
+    </labels>
+    <labels>
+        <fullName>DefaultNumberOfHistoryRecordsToDisplay</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>DefaultNumberOfHistoryRecordsToDisplay</shortDescription>
+        <value>25</value>
+    </labels>
+    <labels>
+        <fullName>Field_Not_Selected</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Field_Not_Selected</shortDescription>
+        <value>You have not selected any field, You have to select at least a field to save settings for history tracking.</value>
+    </labels>
+    <labels>
+        <fullName>Field_Not_SelectedDeselected</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Field Not SelectedDeselected</shortDescription>
+        <value>You didn&apos;t modify any of your field settings for the selected object. Please modify if required else the previous version of settings will be saved.</value>
+    </labels>
+    <labels>
+        <fullName>Information_Message</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Information Message</shortDescription>
+        <value>No Field Historical Data Found</value>
+    </labels>
+    <labels>
+        <fullName>Information_Message_on_View_Page</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Information Message on View Page</shortDescription>
+        <value>Please select an object to proceed further.</value>
+    </labels>
+    <labels>
+        <fullName>NumberOfHistoryRecordsToDisplay</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>NumberOfHistoryRecordsToDisplay</shortDescription>
+        <value>Number of history records to be displayed per page in the view field history tab</value>
+    </labels>
+    <labels>
+        <fullName>Number_Of_Columns</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Number Of Columns</shortDescription>
+        <value>Number of columns to be displayed per page</value>
+    </labels>
+    <labels>
+        <fullName>Number_Of_Fields_Per_Column</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Number Of Fields Per Column</shortDescription>
+        <value>Number of rows to be displayed per page</value>
+    </labels>
+    <labels>
+        <fullName>Object_Not_Found</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Object Not Found</shortDescription>
+        <value>Invalid object name please provide valid name.</value>
+    </labels>
+    <labels>
+        <fullName>Object_Not_Selected</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Object Not Selected</shortDescription>
+        <value>Please select an object...</value>
+    </labels>
+    <labels>
+        <fullName>Package_Prefix</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Package Prefix</shortDescription>
+        <value>UFHT</value>
+    </labels>
+    <labels>
+        <fullName>PicklistDefaultLabel</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>PicklistDefaultLabel</shortDescription>
+        <value>--None--</value>
+    </labels>
+    <labels>
+        <fullName>Setup_Page_Title</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Setup Page Title</shortDescription>
+        <value>Track Field History</value>
+    </labels>
+    <labels>
+        <fullName>Sharing_Purpose</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Sharing Purpose</shortDescription>
+        <value>Sharing_Purpose__c</value>
+    </labels>
+    <labels>
+        <fullName>Sort_fields_by_alphabetically</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Sort fields by alphabetically</shortDescription>
+        <value>Sort fields alphabetically</value>
+    </labels>
+    <labels>
+        <fullName>Ultra_Choose_an_Object</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Ultra Choose an Object</shortDescription>
+        <value>Choose an Object</value>
+    </labels>
+    <labels>
+        <fullName>Ultra_Select_Fields</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Ultra Select Fields</shortDescription>
+        <value>Choose fields for the object that you want to track</value>
+    </labels>
+    <labels>
+        <fullName>Ultra_Track_Container</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Ultra Track Container</shortDescription>
+        <value>Ultra_Track_Container__c</value>
+    </labels>
+    <labels>
+        <fullName>Ultra_Track_Container_Save_Message1</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Ultra_Track_Container_Save_Message1</shortDescription>
+        <value>Your field history track settings for</value>
+    </labels>
+    <labels>
+        <fullName>Ultra_Track_Container_Save_Message2</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Ultra_Track_Container_Save_Message2</shortDescription>
+        <value>have been saved successfully.</value>
+    </labels>
+    <labels>
+        <fullName>WithoutObjectConfigurationSuccessMessage</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>WithoutObjectConfigurationSuccessMessage</shortDescription>
+        <value>Do you want to save the configuration settings?</value>
+    </labels>
+    <labels>
+        <fullName>sObjectTriggerName</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>sObjectTriggerName</shortDescription>
+        <value>HistoryTrackTrigger</value>
+    </labels>
+</CustomLabels>

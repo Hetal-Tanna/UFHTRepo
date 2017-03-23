@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <caseValues>
+        <value>Ultra Track Container</value>
+    </caseValues>
+    <caseValues>
+        <plural>true</plural>
+        <value>Ultra Track Containers</value>
+    </caseValues>
+    <fields>
+        <label><!-- DateHolder --></label>
+        <name>DateHolder__c</name>
+    </fields>
+    <fields>
+        <label><!-- Is Tracking Enabled --></label>
+        <name>Is_Tracking_Enabled__c</name>
+    </fields>
+    <fields>
+        <label><!-- Object Label --></label>
+        <name>Object_Label__c</name>
+    </fields>
+    <fields>
+        <label><!-- Object Name --></label>
+        <name>Object_Name__c</name>
+    </fields>
+    <fields>
+        <label><!-- Tracked Fields --></label>
+        <name>Tracked_Fields__c</name>
+    </fields>
+    <fields>
+        <label><!-- Trigger Deploy Error --></label>
+        <name>Trigger_Deploy_Error__c</name>
+    </fields>
+    <fields>
+        <label><!-- Trigger Status --></label>
+        <name>Trigger_Status__c</name>
+        <picklistValues>
+            <masterLabel>Deployed</masterLabel>
+            <translation><!-- Deployed --></translation>
+        </picklistValues>
+        <picklistValues>
+            <masterLabel>Not Deployed</masterLabel>
+            <translation><!-- Not Deployed --></translation>
+        </picklistValues>
+    </fields>
+    <layouts>
+        <layout>Ultra Track Container Layout</layout>
+        <sections>
+            <label><!-- Custom Links --></label>
+            <section>Custom Links</section>
+        </sections>
+    </layouts>
+    <startsWith>Consonant</startsWith>
+    <validationRules>
+        <errorMessage><!-- Cannot track Attachment Object. --></errorMessage>
+        <name>Cannot_Track_Attachment_Record</name>
+    </validationRules>
+</CustomObjectTranslation>

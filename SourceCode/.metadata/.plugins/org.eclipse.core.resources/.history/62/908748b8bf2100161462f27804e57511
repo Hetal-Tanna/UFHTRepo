@@ -1,0 +1,11 @@
+<apex:page Controller="ViewDataController" cache="true" contentType="text/csv#{!selectedObject}_Historical_DataExport.csv"  language="en-US" readOnly="true" >"Name","Date","User","Action","Record ID"
+<apex:repeat value="{!displayAllHistoryWrapperList}" var="wrapper">
+"{!IdVsAccountNameMap[wrapper.parentId]}","{!wrapper.historyWrapperObj.ModifiedDateTime}","{!wrapper.historyWrapperObj.ModifiedByName}","{!SUBSTITUTE(SUBSTITUTE(wrapper.historyWrapperObj.Action,'<b>',''),'</b>','')}","{!wrapper.historyWrapperObj.parentID}"
+</apex:repeat>
+
+{!selectedObject} - Historical data
+{!$Label.Confidential_Label}
+{!$Label.Exported_by_Label}: {!$User.FirstName} {!$User.LastName}  on {!strDateTime}
+{!$Label.Powered_by_Label}
+
+</apex:page>

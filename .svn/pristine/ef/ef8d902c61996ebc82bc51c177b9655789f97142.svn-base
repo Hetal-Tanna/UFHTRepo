@@ -1,0 +1,477 @@
+<apex:page controller="ViewDataController" readOnly="true"
+    docType="html-5.0" sidebar="false" id="viewFH">
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <script src="/soap/ajax/26.0/connection.js" type="text/javascript"></script>
+    <script src="https://code.jquery.com/ui/1.9.0/jquery-ui.js"></script>
+     <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.1/jquery-ui.js"></script>
+      <script src=" http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.1/jquery-ui.min.js"></script>
+    <link rel="stylesheet"
+        href="https://code.jquery.com/ui/1.9.1/themes/base/jquery-ui.css" />
+    <link
+        href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/css/bootstrap.min.css')}"
+        rel="stylesheet" /> 
+    <link
+        href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/css/landing-page1.css')}"
+        rel="stylesheet" />
+    <link
+        href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/css/bootstrap-datepicker.css')}"
+        rel="stylesheet" />
+    <link
+        href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/css/bootstrap-datepicker.min.css')}"
+        rel="stylesheet" />
+    <link
+        href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/css/jquery.steps.css')}"
+        rel="stylesheet" />
+    <link
+        href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/font-awesome/css/font-awesome.min.css')}"
+        rel="stylesheet" type="text/css" />
+    <script
+        src="{!URLFOR($Resource.BootStrap, '/bootstrapNew/js/bootstrap.min.js')}"></script>
+    <script
+        src="{!URLFOR($Resource.BootStrap, '/bootstrapNew/js/bootstrap-datepicker.min.js')}"></script>
+    <script
+        src="{!URLFOR($Resource.BootStrap, '/bootstrapNew/js/jquery.steps.js')}"></script>
+    <script
+        src="{!URLFOR($Resource.BootStrap, '/bootstrapNew/js/jquery.validate.js')}"></script>
+    
+    <link rel="stylesheet" href="/path/to/jquery.mCustomScrollbar.css" />
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+     <script src="/path/to/jquery.mCustomScrollbar.concat.min.js"></script>
+
+    <apex:stylesheet value="{!URLFOR($Resource.Ultra_Css)}"></apex:stylesheet>
+
+    <style>
+    .panel-heading .form-group select.form-control {
+        background: url({!URLFOR($Resource.BootStrap,'/bootstrapNew/images/arrow-down.png')}) no-repeat right center;
+    }
+    .panel-heading .form-group.small:after{ 
+        background: url({!URLFOR($Resource.BootStrap,'/bootstrapNew/images/arrow-down.png')}) no-repeat right center;
+    }
+
+   </style>
+
+    <script>
+        function setFocusOnLoad() {
+        }
+        $(document).ready(function() {
+            //$("#historyRecordDiv").hide();
+            $(".dateFormat").hide();
+            $(".viewDataButton").hide();
+        });
+
+        function hideDateFormat() {
+            $(".dateFormat").hide();
+            $(".errorMsg").hide();
+        }
+        function toggleHistoryRecord(toggelingDivId, toggelingImageId) {
+
+            var curSrc = $('#' + toggelingImageId).attr('src');
+            if (curSrc == '/img/move_right.gif') {
+                $('#' + toggelingImageId).attr('src', '/img/move_down.gif');
+            } else
+                $('#' + toggelingImageId).attr('src', '/img/move_right.gif');
+
+            $("#" + toggelingDivId).collapse('toggle');
+        }
+        function displayhistoryRecordDiv() {
+            //$("#historyRecordDiv").show();
+        }
+
+        function validateDate(flag) {
+           
+            var startDate = $('.startDate').val();
+            var endDate = $('.endDate').val();
+            var msgs1 = [];
+            var msgs2 = [];
+            var msgElement1 = $("#dateErrorMessageStartDateDiv");
+            var msgElement2 = $("#dateErrorMessageEndDateDiv");
+          
+            msgElement1.html('');
+            msgElement2.html('');
+            if (startDate !== null && startDate !== ''
+                    && !isValidDate(startDate)) {
+                msgs1.push('Invalid Start Date');
+            }
+            if (endDate !== null && endDate !== '' && !isValidDate(endDate)) {
+                msgs2.push('Invalid End Date');
+            }
+            if (startDate !== null && startDate !== '' && endDate !== null
+                    && endDate !== '' && !msgs1.length
+                    && !isValidRange(startDate, endDate)) {
+                msgs1.push('Invalid Date Range');
+            }
+            if((startDate == null || startDate == '') && (endDate == null
+                    || endDate == '')) {
+                    DateFileterWhenStartEndDateNull();
+            }
+            if (msgs1.length) {
+                var msgHtml = '';
+                for (i = 0; i < msgs1.length; i++) {
+                    msgHtml += msgs1[i] + '</br>';
+                }
+                msgElement1.html(msgHtml);
+                $(".viewDataButton").hide();
+            }
+            
+            if (msgs2.length) {
+                var msgHtml = '';
+                for (i = 0; i < msgs2.length; i++) {
+                    msgHtml += msgs2[i] + '</br>';
+                }
+                msgElement2.html(msgHtml);
+                $(".viewDataButton").hide();
+            }
+            else if(!msgs1.length && !msgs2.length){
+                 
+                // $(".dateRange option:selected" ).text('Custom').change();
+                 //$(".dateRange option:selected" ).val('Custom').change();
+                 if(flag == true) {
+                     $(".viewDataButton").show();
+                     if($(".dateRange option:selected").val != 'Custom') {
+                         $(".dateRange option").each(function() {
+                            
+                            if(this.value == 'Custom') {
+                                this.selected = true;
+                            }
+                         });
+                      }
+                  }
+                 
+            }
+            else {
+            
+                $(".dateRange option").each(function() {
+                    
+                    if(this.value == 'Custom') {
+                        this.selected = true;
+                    }
+                 });
+            }
+            
+        }
+        function isValidRange(startDate, endDate) {
+            if (Date.parse(startDate) > Date.parse(endDate)) {
+                return false;
+            }
+            return true;
+        }
+
+        function isValidDate(dateValue) {
+           console.log('isValidDate'+dateValue);
+            var dateArray = dateValue.split('/');
+            if (dateArray.length == 3
+                    && (dateArray[0] > 0 && dateArray[0] <= 12)
+                    && (dateArray[1] > 0 && dateArray[1] <= 31)
+                    && (dateArray[2] >= 1990 && dateArray[2] <= 2021)) {
+                    console.log('isValidDate'+dateArray[2]);
+                return true;
+            }
+            return false;
+        }
+        
+        function redirectToUser(recordId) {
+            
+            var url;
+            if(sforce.one) {
+              url = sforce.one.navigateToSObject(recordId);
+            }
+           else {
+               url = '/'+recordId;
+              
+           }
+           if(url.length) {
+                window.open(url,'_blank');
+                window.focus();
+                window.opener.location.reload(true);
+           }
+               
+           
+        }
+       
+        /*
+         function redirectFunction(val){
+            window.open(val);
+            //window.location.href(val);
+        }*/
+    </script>
+    <div class="bs PageSizeDiv" style="background-color: #f8f8f8;">
+        <div class="content-section-a" style="background-color: #f8f8f8;">
+            <div class="container" style="margin-top: -120px;">
+                <div class="content">
+                    <apex:form id="frm">
+
+                        <div style="padding-top: 2px">
+                            <apex:image value="{!$Resource.HistoricalDataImage}" width="50px"
+                                style="margin:10px" />
+                            <apex:outputLabel value="View Historical Data"
+                                style="font-weight: 600;font-size:30px !important; margin-top:6px; font-family:pageheader;" />
+
+
+                        </div>
+                        <apex:actionStatus id="actStatusId" layout="block">
+                            <apex:facet name="start">
+                                <div id="assign-action-spinner-main">
+                                    <div id="assign-action-spinner-content">
+                                        <img src="/img/analytics/reportbuilder/icons/spinner32.gif"
+                                            alt="Processing..." title="Processing..." />
+                                        <p>Processing...</p>
+                                    </div>
+                                </div>
+                            </apex:facet>
+                        </apex:actionStatus>
+
+                        <div class="panel">
+                            <div class="panel-heading">
+                                <div class="row">
+                                    <div class="col-lg-3 col-md-3 col-sm-3">
+                                        <div class="form-group small">
+                                            <label class="asterix">Choose an Object</label>
+                                            <apex:selectList value="{!selectedObject}"
+                                                multiselect="false" size="1" title="Choose an Object"
+                                                styleClass="form-control required" onChange="DateFileter();">
+                                                <apex:selectOptions value="{!objectSelectedoptionsList}" />
+                                            </apex:selectList>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-lg-2 col-md-2 col-sm-2">
+                                        <apex:outputPanel rendered="{!viewUserFilterList}">
+                                        <div class="form-group small">
+                                                <label class="asterix">User</label>
+                                                <apex:selectList value="{!selectedUser}" multiselect="false"
+                                                    size="1" title="Choose an User" onChange="DateFileter();"
+                                                    styleClass="form-control">
+                                                    <apex:selectOptions value="{!userSelectOptionList}" />
+                                                </apex:selectList>
+                                        </div>
+                                        </apex:outputPanel>
+                                    </div>
+                                </div>
+                                <br/>
+                                <div class="row">
+                                    <div class="col-lg-3 col-md-3 col-sm-3">
+                                        <div class="form-group small">
+                                            <apeX:outputPanel id="DateFilter">
+                                            <label class="asterix">Date Range</label>
+                                            <apex:selectList value="{!selectedDateFilter}"
+                                                multiselect="false" size="1" title="Date Range"
+                                                onchange="DateFileter()" styleClass="form-control dateRange"
+                                               >
+                                                <apex:selectOptions value="{!dateFilterSelectOptionsList}" />
+                                            </apex:selectList>
+                                            </apeX:outputPanel>
+                                        </div>
+                                        
+                                    </div>
+                                    
+                                    <apex:outputPanel id="CustomDate">
+                                        <apex:outputPanel >
+                                            <div class="col-lg-2 col-md-2 col-sm-2">
+                                                <div class="form-group small calendar" id="sandbox-container">
+                                                    <label class="asterix">From</label>
+                                                    <div class="input-group date">
+                                                        <apex:inputField value="{!startDateObj.DateHolder__c}"
+                                                            styleClass="form-control required startDate"
+                                                            onchange="validateDate(true);" html-placeholder="mm/dd/yyyy"
+                                                            id="startDate">
+                                                        </apex:inputField>
+                                                        <span class="input-group-addon"> <i
+                                                            class="glyphicon glyphicon-th"> </i>
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <p id="dateErrorMessageStartDateDiv" class="error-field"></p> 
+                                                   </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-2 col-md-2 col-sm-2 col-xs-6">
+                                                <div class="form-group small calendar" id="sandbox-container">
+                                                    <label class="asterix">To</label>
+                                                    <div class="input-group date">
+                                                        <apex:inputField value="{!endDateObj.DateHolder__c}"
+                                                            styleClass="form-control required endDate"
+                                                            onchange="validateDate(true);" html-placeholder="mm/dd/yyyy"
+                                                             id="endDate"/>
+                                                        <span class="input-group-addon"> <i
+                                                            class="glyphicon glyphicon-th"> </i>
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <p id="dateErrorMessageEndDateDiv" class="error-field"></p> 
+                                                   </div>
+                                                </div>
+                                                
+                                            </div>
+                                            
+                                        </apex:outputPanel>
+                                    </apex:outputPanel>
+                                    <div class="col-lg-4">
+                                        <div class="final-btns">
+                                            <apex:outputPanel >
+                                                <apex:commandButton value="View Historical Data"
+                                                    action="{!getRecord}" onclick="displayhistoryRecordDiv();"
+                                                    reRender="renderHyperLink,downloadLinks"
+                                                    status="actStatusId" styleClass="btn btn-sm btn-small viewDataButton"
+                                                    title="View Historical Data" style="margin-right: 20px" />
+                                            </apex:outputPanel>
+
+                                            <apex:outputPanel id="downloadLinks">
+                                                <apex:outputPanel rendered="{!displayHistoryWrapperList.size > 0}">
+                                                    <div class="dropdown">
+                                                        <button class="btn btn-sm btn-small" type="button"
+                                                            id="dropdownMenu1" data-toggle="dropdown"
+                                                            aria-haspopup="true" aria-expanded="true" title="Export Data">
+                                                            Export <span class="caret" title="Export As PDF or CSV"></span>
+                                                        </button>
+                                                        <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+                                                            <li><i class="fa fa-file-excel-o cog-gear2"></i> <apex:commandLink value="CSV" action="{!exportAsCSVFile}"
+                                                                    type="image/png" title="Export As CSV File" /></li>
+
+
+                                                            <li><i class="fa fa-file-pdf-o cog-gear2"></i> <apex:commandLink value=" PDF" action="{!exportAsPDFFile}"
+                                                                    type="image/png" title="Export As PDF File"
+                                                                     target="_blank" /></li>
+                                                        </ul>
+                                                    </div>
+                                                </apex:outputPanel>
+                                            </apex:outputPanel>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <apex:outputPanel id="renderHyperLink">
+                             <div class="mCustomScrollbar" data-mcs-theme="dark">
+                                <div id="historyRecordDiv" class="panel-body"
+                                    style="font-size: small">
+                                    <apex:outputPanel id="Op1">
+                                        <apex:outputPanel >
+<!--                                              <div id="DateError"/> -->
+<!--                                             <b><apex:pageMessages id="showmsg1" /></b> -->
+                                        </apex:outputPanel>
+                                        <apex:outputPanel rendered="{!displayHistoryWrapperList.size > 0}">
+                                            <apex:variable var="checkNextPrivousValue" value="" />
+                                            <apex:variable var="count" value="" />
+                                            <apex:variable var="privousParentId" value="" />
+                                             <apex:variable var="paginationFlag" value="{!totalNumberOfRecords}" />
+                                            <div id="op2">
+                                                <table class="object-grid scrollTable">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Name
+                                                            </th>
+                                                            <th>Date
+                                                            </th>
+                                                            <th>User
+                                                            </th>
+                                                            <th>Action
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody style="font-weight: 100;">
+                                                    <apex:repeat value="{!displayHistoryWrapperList}"
+                                                        var="wrapper">
+                                                        
+                                                            <!--   <div class="panel panel-default">-->
+                                                            <tr>
+                                                                <td ><apex:commandLink value="{!IdVsAccountNameMap[wrapper.parentId]}"
+                                                                        onclick="redirectToUser('{!wrapper.parentId}');"
+                                                                        rendered="{!AND(wrapper.parentId != count)}">
+<!--                                                                         <apex:param name="redirectToUser" -->
+<!--                                                                             value="{!wrapper.parentId}" -->
+<!--                                                                             assignTo="{!redirectToRecordId}" /> -->
+                                                                    </apex:commandLink> <apex:variable var="count" value="{!wrapper.parentId}" /></td>
+                                                                <td ><apex:outputText value="{!wrapper.modifiedTime}"
+                                                                        rendered="{!OR(wrapper.modifiedTime != checkNextPrivousValue,
+                                                                       wrapper.parentId != privousParentId)}" />
+                                                                </td>
+                                                                <td ><apex:commandLink value="{!wrapper.historyWrapperObj.ModifiedByName}"
+                                                                       onclick="redirectToUser('{!wrapper.historyWrapperObj.ModifiedById}');"
+                                                                        rendered="{!OR(wrapper.modifiedTime != checkNextPrivousValue,
+                                                                       wrapper.parentId != privousParentId)}"
+                                                                       >
+<!--                                                                         <apex:param name="redirectToUser" -->
+<!--                                                                             value="{!wrapper.historyWrapperObj.ModifiedById}" -->
+<!--                                                                             assignTo="{!redirectToRecordId}" /> -->
+                                                                    </apex:commandLink> <apex:variable var="checkNextPrivousValue"
+                                                                        value="{!wrapper.modifiedTime}" />
+                                                                    <apex:variable var="privousParentId"
+                                                                        value="{!wrapper.parentId}" /></td>
+                                                                <td><apex:facet name="header">Action</apex:facet>
+                                                                    <apex:outputText value="{!wrapper.historyWrapperObj.action}"
+                                                                        escape="false" /></td>
+                                                            </tr>
+
+                                                            <!--   </div>--> 
+                                                       
+                                                    </apex:repeat>
+                                                      </tbody>
+                                                </table>
+                                            </div> 
+                                            <div>
+                                                <div class="pagination"
+                                                    style="border-top: 0px; padding-top: 1px; border-bottom: 2px  solid #f2f2f2 !important; margin-bottom: 5px;">
+                                                    <div class="page-counter">
+                                                        <apex:outputLabel value="Showing {!(pageNumber*pageSize)+1-pageSize} - {!IF((pageNumber*pageSize)>totalNumberOfRecords, totalNumberOfRecords,(pageNumber*pageSize))} of {!totalNumberOfRecords} records"
+                                                                        style="margin-left: 5px;margin-right: 34%;"/>
+                                                    </div>
+                                                    <div class="page-actions">
+                                                        <apex:outputPanel id="navigateButtons">
+                                                            <apex:commandButton action="{!first}" title="First"
+                                                                 image="{!IF(hasPrevious,URLFOR($Resource.BootStrap,'/bootstrapNew/images/First-arrow-disabled.png'),
+                                                                         URLFOR($Resource.BootStrap,'/bootstrapNew/images/First-arrow.png'))}"
+                                                                styleclass="first-btn"
+                                                                disabled="{!hasPrevious}" reRender="renderHyperLink"
+                                                                style="background-color:#fff !important;    border: none; vertical-align: bottom;" 
+                                                                status="actStatusId"/>
+                                                            <apex:commandButton action="{!Previous}" title="Previous"
+                                                               image="{!IF(hasPrevious,URLFOR($Resource.BootStrap,'/bootstrapNew/images/previous-arrow-disabled.png'),
+                                                                       URLFOR($Resource.BootStrap,'/bootstrapNew/images/previous-arrow.png'))}"
+                                                                styleclass="previous-btn"
+                                                                disabled="{!hasPrevious}" reRender="renderHyperLink"
+                                                                style="background-color:#fff !important;    border: none; vertical-align: bottom;" 
+                                                                status="actStatusId"/>
+                                                            <apex:commandButton action="{!Next}" title="Next"
+                                                               image="{!IF(hasNext,URLFOR($Resource.BootStrap,'/bootstrapNew/images/next-arrow-disabled.png'),
+                                                                       URLFOR($Resource.BootStrap,'/bootstrapNew/images/next-arrow.png'))}"
+                                                                styleclass="next-btn" disabled="{!hasNext}"
+                                                                reRender="renderHyperLink"
+                                                                style="background-color:#fff !important;    border: none; vertical-align: bottom;" 
+                                                                status="actStatusId"/>
+                                                            <apex:commandButton action="{!last}" title="Last"
+                                                                image="{!IF(hasNext,URLFOR($Resource.BootStrap,'/bootstrapNew/images/latest-arrow-disabled.png'),
+                                                                        URLFOR($Resource.BootStrap,'/bootstrapNew/images/latest-arrow.png'))}"
+                                                                styleclass="last-btn" disabled="{!hasNext}"
+                                                                reRender="renderHyperLink"
+                                                                style="background-color:#fff !important;    border: none; vertical-align: bottom;" 
+                                                                status="actStatusId"/>
+                                                        </apex:outputPanel>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </apex:outputPanel>
+                                        <apex:outputPanel rendered="{!AND(selectedObject != '  ', displayHistoryWrapperList.size == 0)}">
+                                            <apex:pageMessage summary="{!$Label.Information_Message}"
+                                                severity="info" strength="2" />
+                                        </apex:outputPanel>
+                                        <apex:outputPanel rendered="{!AND(selectedObject == '  ',displayHistoryWrapperList.size == 0)}">
+                                            <apex:pageMessage summary="{!$Label.Information_Message_on_View_Page}"
+                                                severity="info" strength="2" />
+                                        </apex:outputPanel>
+                                    </apex:outputPanel>
+                                </div>
+                               </div>
+                            </apex:outputPanel>
+                        </div>
+                        <apex:actionFunction name="DateFileter" action="{!dateFilter}"
+                            reRender="CustomDate, renderHyperLink, downloadLinks" status="actStatusId"
+                            oncomplete="validateDate(false), hideDateFormat();" />
+                        <apex:actionFunction name="DateFileterWhenStartEndDateNull" action="{!dateFileterWhenStartEndDateNull}"
+                            reRender="DateFilter, renderHyperLink, downloadLinks" status="actStatusId"
+                            oncomplete="hideDateFormat();" />
+                    </apex:form>
+                </div>
+            </div>
+        </div>
+    </div>
+</apex:page>

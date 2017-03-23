@@ -1,0 +1,43 @@
+<!--
+ * @Page Name: CreateRemoteSiteSetting
+ * @Description: Designed to create remote site setting after post installation of package.
+ * ===================================================================================================
+ *       Version   | Date        | Author             | Comments
+ * ---------------------------------------------------------------------------------------------------
+ *       1.0       | 13/05/2016  | Eternus Solutions  | 1. Created page to create remote site setting.
+ * ===================================================================================================
+ -->
+<apex:page controller="ConfigurationController" showHeader="false" sidebar="false" >
+    <apex:includeScript value="{!$Resource.CreateRemoteSiteSettingScript}" />
+    <script>
+    window.onload = function() {
+      verifyUserHasPermissionToCreateRemoteSiteSetting();
+    };
+    function checkPermissionForRemoteSiteSetting(isUserHasPermissionToCreateRemoteSiteSetting) {
+
+      var remoteSiteName1 = 'VisualForceRemoteSiteSetting';
+      var vfURL = document.location.hostname;
+      
+      var remoteSiteName2 = 'SalesforceRemoteSiteSetting';
+      var sfURL = '{!URLENCODE(baseURL)}';
+      var sessionId = '{!JSENCODE(HTMLENCODE($Api.Session_ID))}';
+
+      // Call method to create remote site setting.
+      if(isUserHasPermissionToCreateRemoteSiteSetting == 'true') {
+          addRemoteSiteSetting(remoteSiteName1, remoteSiteName2, sfURL, vfURL, sessionId, '{!$Label.ufht__remotesitesettingsuccesssmessage}');
+      }
+      else {
+          document.getElementById('successOrErrorMessage').innerHTML  = '{!$Label.ufht__remotesitesettingerrormessage}';
+      }
+    }
+    </script>
+    <br>
+        <h2 id="successOrErrorMessage"> </h2>
+    </br>
+    
+    <apex:form > 
+        <apex:actionFunction name="verifyUserHasPermissionToCreateRemoteSiteSetting"
+                             action="{!verifyUserHasPermissionToCreateRemoteSiteSetting}"
+                             oncomplete="checkPermissionForRemoteSiteSetting('{!isUserHasPermissionToCreateRemoteSiteSetting}');"/>
+    </apex:form>
+</apex:page>

@@ -1,0 +1,4 @@
+<apex:page StandardController="Account" docType="html-5.0" readOnly="false" extensions="RelatedListComponentExtension"
+    sidebar="false" tabStyle="View_Field_History__tab" cache="false" showHeader="true">
+    <c:HistoryRecordsRelatedList recId="{!CASESAFEID(recordId)}" />
+</apex:page>

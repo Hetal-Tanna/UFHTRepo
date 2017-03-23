@@ -1,0 +1,14 @@
+eclipse.preferences.version=1
+endpointApiVersion=33.0
+endpointEnvironment=Production/Developer Edition
+endpointServer=www.salesforce.com
+httpsProtocol=true
+ideVersion=29.0
+keependpoint=false
+metadataFormatVersion=29.0
+namespacePrefix=
+packageName=unpackaged
+preferToolingDeployment=true
+projectIdentifier=IDE626519101915746101
+readTimeout=400
+username=ultrafhtdevorg@espl.com

@@ -1,0 +1,235 @@
+/**
+ * Class Name: DynamicTriggerGenericHandlerTest
+ * @description: Test class for DynamicTriggerGenericHandler class.
+ * @author: Amruta Kumbhakarn
+ * @date:  03-03-2016
+ * @revised:   
+ */
+@isTest
+private class DynamicTriggerGenericHandlerTest {
+    
+   static testMethod void getUserNameFromIDTestCase1() {
+      Profile p = [SELECT Id FROM Profile WHERE Name='Standard User'];
+      User u = TestDataFactory.getUser('User1', 'user1', 'test@user1.come', p.Id );
+      
+      string userName;
+      
+      system.runAs(u) {
+        test.startTest();
+        userName = DynamicTriggerGenericHandler.getUserNameFromID(UserInfo.getUserId());
+        test.stopTest();
+      }
+      
+      system.assertEquals('User1', userName);
+   }
+   
+   static testMethod void getUserNameFromIDTestCase2() {
+
+      string userName;
+
+      test.startTest();
+      userName = DynamicTriggerGenericHandler.getUserNameFromID(null);
+      test.stopTest();
+      
+      system.assertEquals('', userName);
+   }
+   
+   static testMethod void generateActionStringTestCase1() {
+
+      string actionString;
+      DynamicTriggerGenericHandler objHandler = new DynamicTriggerGenericHandler ();
+      test.startTest();
+      actionString = DynamicTriggerGenericHandler.generateActionString('Email','Email','a@b.com','b@c.com');
+      test.stopTest();
+      
+      system.assertEquals('Changed <b>Email</b> From <b>a@b.com</b> To <b>b@c.com</b>', actionString);
+   }
+   
+   static testMethod void generateActionStringTestCase2() {
+
+      string actionString;
+      DynamicTriggerGenericHandler objHandler = new  DynamicTriggerGenericHandler ();
+      test.startTest();
+      actionString = DynamicTriggerGenericHandler.generateActionString('','', 'a@b.com','b@c.com');
+      test.stopTest();
+      
+      system.assertEquals(null, actionString);
+   }
+   
+   static testMethod void generateActionStringTestCase3() {
+
+      string actionString;
+      DynamicTriggerGenericHandler objHandler = new DynamicTriggerGenericHandler ();
+      test.startTest();
+      actionString = DynamicTriggerGenericHandler.generateActionString('Email','', '','b@c.com');
+      test.stopTest();
+      
+      system.assertEquals(null, actionString);
+   }
+   
+   static testMethod void generateActionStringTestCase4() {
+
+      string actionString;
+      DynamicTriggerGenericHandler objHandler = new DynamicTriggerGenericHandler ();
+      test.startTest();
+      actionString = DynamicTriggerGenericHandler.generateActionString('','Email', 'a@b.com','');
+      test.stopTest();
+      
+      system.assertEquals(null, actionString);
+   }
+   
+   static testMethod void onUpdateStoreHistoryDataTestCase1() {
+      
+      list<Ultra_Track_Container__c> ultraTrackContainerList = new list<Ultra_Track_Container__c>();
+      list<Attachment> attachmentList = new list<Attachment>();
+      list<Account> accountList = new list<Account>();
+      
+      Account accObj = TestDataFactory.getAccount('Test Account');
+      insert accObj;
+      
+      accountList.add(accObj);
+      accObj.Phone = '12345';
+      accObj.Name = 'Test';
+      update accObj;
+      
+      accountList.add(new Account(Id = accObj.Id));
+
+      ultraTrackContainerList.addAll(TestDataFactory.getUltraTrackContainerList(new list<string> {'Account'},
+                                                                                  new list<string> {'Account'},
+                                                                                  new list<boolean> {true},
+                                                                                  new list<string> {'Phone,Name'}
+                                                                                  )
+                                      );
+        
+      insert ultraTrackContainerList;
+      
+      string attachmentBodyForAccount = '{"Phone":{"lstHistory":[],"fieldLabel":"Phone","fieldApiName":"Phone"},"Name":{"lstHistory":[],"fieldLabel":"details","fieldApiName":"Name"}}';
+      attachmentList.addAll(TestDataFactory.getAttachementList(new list<string> {'UltraHistoryDataAccount'},
+                                                                 new list<blob> {blob.valueOf(attachmentBodyForAccount)},
+                                                                 new list<Id> {ultraTrackContainerList[0].Id}
+                                                                )
+                             );
+       insert attachmentList;
+       
+       DynamicTriggerGenericHandler dynamicTriggerHandlerObj = new DynamicTriggerGenericHandler();
+       test.startTest();
+       dynamicTriggerHandlerObj.onUpdateStoreHistoryData(new Map<Id, Sobject> {accountList[0].Id => (sObject)accountList[0]},
+                                                        new Map<Id, Sobject> {accountList[1].Id => (sObject)accountList[1]},
+                                                        'Account'
+                                                        );
+       test.stopTest();
+       
+       List<Attachment> updatedAttchmentList = [select Id, Body
+                                               from Attachment
+                                               where ParentId =: ultraTrackContainerList[0].Id
+                                               ];
+       map<String,UltraTrackWrapper> ultraTrackWapperMap = (map<String,UltraTrackWrapper>)
+                                                            System.JSON.deserialize(updatedAttchmentList[0].body.toString(), 
+                                                            map<String,UltraTrackWrapper>.class);
+       system.assertEquals(1, ultraTrackWapperMap.get('Name').lstHistory.size());
+       system.assertEquals(1, ultraTrackWapperMap.get('Phone').lstHistory.size());
+   }
+   
+    static testMethod void onUpdateStoreHistoryDataTestCase2() {
+      
+      list<Ultra_Track_Container__c> ultraTrackContainerList = new list<Ultra_Track_Container__c>();
+      list<Attachment> attachmentList = new list<Attachment>();
+      list<Account> accountList = new list<Account>();
+      
+      Account accObj = TestDataFactory.getAccount('Test Account');
+      insert accObj;
+      
+      accountList.add(accObj);
+      accObj.Phone = '12345';
+      accObj.Name = 'Test';
+      update accObj;
+      
+      accountList.add(new Account(Id = accObj.Id));
+
+      ultraTrackContainerList.addAll(TestDataFactory.getUltraTrackContainerList(new list<string> {'Account'},
+                                                                                  new list<string> {'Account'},
+                                                                                  new list<boolean> {true},
+                                                                                  new list<string> {'Phone,Name'}
+                                                                                  )
+                                      );
+        
+      insert ultraTrackContainerList;
+     
+       DynamicTriggerGenericHandler dynamicTriggerHandlerObj = new DynamicTriggerGenericHandler();
+       test.startTest();
+       dynamicTriggerHandlerObj.onUpdateStoreHistoryData(new Map<Id, Sobject> {accountList[0].Id => (sObject)accountList[0]},
+                                                        new Map<Id, Sobject> {accountList[1].Id => (sObject)accountList[1]},
+                                                        'Account'
+                                                        );
+       test.stopTest();
+       
+       List<Attachment> updatedAttchmentList = [select Id, Body
+                                               from Attachment
+                                               where ParentId =: ultraTrackContainerList[0].Id
+                                               ];
+       map<String,UltraTrackWrapper> ultraTrackWapperMap = (map<String,UltraTrackWrapper>)
+                                                            System.JSON.deserialize(updatedAttchmentList[0].body.toString(), 
+                                                            map<String,UltraTrackWrapper>.class);
+       system.assertEquals(1, ultraTrackWapperMap.get('Name').lstHistory.size());
+       system.assertEquals(1, ultraTrackWapperMap.get('Phone').lstHistory.size());
+   }
+   static testMethod void onUpdateStoreHistoryDataTestCase3() {
+      
+      list<Ultra_Track_Container__c> ultraTrackContainerList = new list<Ultra_Track_Container__c>();
+      list<Attachment> attachmentList = new list<Attachment>();
+      list<Account> accountList = new list<Account>();
+      Profile p = [SELECT Id FROM Profile WHERE Name='System Administrator'];
+        User u = TestDataFactory.getUser('User2', 'user2', 'test@user2.come', p.Id );
+        
+      Account accObj = TestDataFactory.getAccount('Test Account');
+      insert accObj;
+      
+      accountList.add(accObj);
+      system.runAs(u){
+      accObj.Phone = '12345';
+      accObj.Name = 'Test';
+      accObj.OwnerId= UserInfo.getUserID();
+      update accObj;
+      }
+      
+      
+      accountList.add(new Account(Id = accObj.Id));
+
+
+      ultraTrackContainerList.addAll(TestDataFactory.getUltraTrackContainerList(new list<string> {'Account'},
+                                                                                  new list<string> {'Account'},
+                                                                                  new list<boolean> {true},
+                                                                                  new list<string> {'Phone,Name,OwnerId'}
+                                                                                  )
+                                      );
+        
+      insert ultraTrackContainerList;
+      
+      string attachmentBodyForAccount = '{"Phone":{"lstHistory":[],"fieldLabel":"Phone","fieldApiName":"Phone"},"OwnerId":{"lstHistory":[],"fieldLabel":"Owner Id","fieldApiName":"OwnerId"}}';
+                                         
+      attachmentList.addAll(TestDataFactory.getAttachementList(new list<string> {'UltraHistoryDataAccount'},
+                                                                 new list<blob> {blob.valueOf(attachmentBodyForAccount)},
+                                                                 new list<Id> {ultraTrackContainerList[0].Id}
+                                                                )
+                             );
+       insert attachmentList;
+       
+       DynamicTriggerGenericHandler dynamicTriggerHandlerObj = new DynamicTriggerGenericHandler();
+       test.startTest();
+       dynamicTriggerHandlerObj.onUpdateStoreHistoryData(new Map<Id, Sobject> {accountList[0].Id => (sObject)accountList[0]},
+                                                        new Map<Id, Sobject> {accountList[1].Id => (sObject)accountList[1]},
+                                                        'Account'
+                                                        );
+       test.stopTest();
+       
+       List<Attachment> updatedAttchmentList = [select Id, Body
+                                               from Attachment
+                                               where ParentId =: ultraTrackContainerList[0].Id
+                                               ];
+       map<String,UltraTrackWrapper> ultraTrackWapperMap = (map<String,UltraTrackWrapper>)
+                                                            System.JSON.deserialize(updatedAttchmentList[0].body.toString(), 
+                                                            map<String,UltraTrackWrapper>.class);
+       system.assertEquals(1, ultraTrackWapperMap.get('OwnerId').lstHistory.size());
+       system.assertEquals(1, ultraTrackWapperMap.get('Phone').lstHistory.size());
+   }
+}

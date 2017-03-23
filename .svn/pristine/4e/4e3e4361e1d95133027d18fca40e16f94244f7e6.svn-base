@@ -1,0 +1,23 @@
+<div class="container" style="white-space:nowrap">
+    <span id="image" style="display: inline;float: left;" class="iconDetails" >
+        <img style="height: 45px;width: 45px;" src="!APP_LOGO!" alt="Company Logo" height="74" width="74" />
+    </span>
+
+    <span id="texts" style="display: inline;white-space: nowrap;text-align: left;font-size: 20px;font-family: Arial;padding-top: 1%;padding-left: 1%;"> 
+        Ultra FieldHistory Tracker
+    </span>
+</div>​
+<br/><br/><br/>
+<div class="message" style="font-style: italic;font-size: 15px;font-family: Arial;">
+    Dear !USER_NAME!, <br/>
+    <p>Your license for Ultra FieldHistory Tracker is about to expire in <b>!DAYS! day(s)</b>. Please contact <a href="mailto:sales@eternussolutions.com?cc=appsupport@eternussolutions.com">Eternus Sales Team</a> for license renewal.</p>
+</div>
+<div align="left" class="thankYouSection" style="font-size: 13px;font-family: Arial;">
+    Thank you,<br/>
+    Ultra FieldHistory Tracker Team<br/>
+    Powered by Eternus Solutions Pvt. Ltd.,<br/>
+    India. 
+</div><br/><br/>
+<div style="font-style: italic; text-align: center">
+    Disclaimer: This is an auto-generated mail. Please do not reply
+</div>

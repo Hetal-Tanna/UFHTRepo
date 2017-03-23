@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <caseValues>
+        <plural>false</plural>
+        <value>Ultra Track Container</value>
+    </caseValues>
+    <caseValues>
+        <plural>true</plural>
+        <value>Ultra Track Containers</value>
+    </caseValues>
+    <fields>
+        <label><!-- DateHolder --></label>
+        <name>DateHolder__c</name>
+    </fields>
+    <fields>
+        <label><!-- Is Tracking Enabled --></label>
+        <name>Is_Tracking_Enabled__c</name>
+    </fields>
+    <fields>
+        <label><!-- Object Label --></label>
+        <name>Object_Label__c</name>
+    </fields>
+    <fields>
+        <label><!-- Object Name --></label>
+        <name>Object_Name__c</name>
+    </fields>
+    <fields>
+        <label><!-- Tracked Fields --></label>
+        <name>Tracked_Fields__c</name>
+    </fields>
+    <layouts>
+        <layout>Ultra Track Container Layout</layout>
+        <sections>
+            <label><!-- Custom Links --></label>
+            <section>Custom Links</section>
+        </sections>
+    </layouts>
+    <startsWith>Consonant</startsWith>
+</CustomObjectTranslation>

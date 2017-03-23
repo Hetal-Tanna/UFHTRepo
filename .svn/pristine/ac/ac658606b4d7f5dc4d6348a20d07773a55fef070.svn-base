@@ -1,0 +1,22 @@
+<div class="container" style="white-space:nowrap">
+    <span id="image" style="display: inline;float: left;" class="iconDetails" >
+        <img style="height: 45px;width: 45px;" src="!APP_LOGO!" alt="Company Logo" height="74" width="74" />
+    </span>
+
+    <span id="texts" style="display: inline;white-space: nowrap;text-align: left;font-size: 20px;font-family: Arial;padding-top: 1%;padding-left: 1%;"> 
+        Ultra FieldHistory Tracker
+    </span>
+</div>​
+<br/><br/><br/>
+<div class="message" style="font-family:Liberation Serif;font-size: 15px;">
+    Dear !USER_NAME!, <br/>
+    <p>You do not have adequate licenses for Ultra FieldHistory Tracker package. Please contact <a href="mailto:sales@eternussolutions.com?cc=appsupport@eternussolutions.com">Eternus Sales Team</a> for more information.</p>
+</div>
+<div align="left" class="thankYouSection" style="font-family:Liberation Serif;font-size: 15px;">
+   Regards, <br/>
+   Ultra FieldHistory Tracker Team <br/>
+   Powered by: <a href="http://www.eternussolutions.com">Eternus Solutions Pvt. Ltd.</a>
+</div><br/>
+<div style="font-style: italic;">
+    Disclaimer: This is an auto-generated mail. Please do not reply
+</div>

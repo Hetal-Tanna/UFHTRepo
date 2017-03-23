@@ -1,0 +1,8 @@
+Dear {!Ultra_Track_Container__c.OwnerFullName},
+
+Field History Tracking has not been enabled on {!Ultra_Track_Container__c.Object_Label__c} because of following error:
+{!Ultra_Track_Container__c.Trigger_Deploy_Error__c}
+Source Org: {!Organization.Id}
+
+Regards,
+Ultra FieldHistory Tracker Team

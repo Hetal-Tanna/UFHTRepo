@@ -1,0 +1,54 @@
+<!--
+    * @Page Name: PieChart
+    * @Description: 
+    *               
+    *               
+    *               
+    *==========================================================================================================
+    *       Version   | Date        | Author             | Comments
+    *---------------------------------------------------------------------------------------------------
+    *       1.0       | 23/01/2017  | Eternus Solution   | 1. 
+    *                 |             |                    |    
+    *==========================================================================================================
+    -->
+<apex:page controller="PieChartController">
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+    <script type="text/javascript">
+      google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(initCharts);
+      function initCharts() {          
+          UFHT.PieChartController.FetchContainerData( 
+                 function(result, event){    
+                              
+          var data = new google.visualization.DataTable();
+          data.addColumn('string', 'ObjectName');
+          
+          data.addColumn('number', 'Size');
+          //dataTable.addColumn({type: 'string', role: 'tooltip'});
+          
+          for(var i =0; i<result.length;i++)
+          {
+              var r = result[i];
+              data.addRow([r.objContainer.UFHT__Object_Name__c,r.bodylength]); 
+              //+'\n'+r.objContainer.UFHT__Object_Label__c+r.objContainer.UFHT__Object_Label__c
+              //r.objContainer.UFHT__Object_Label__c,
+          }
+          
+          var options = 
+          {
+              title: 'Storage Usage'   
+          };
+          var formatter = new google.visualization.NumberFormat({suffix: 'KB'});
+          formatter.format(data, 1); 
+          var view = new google.visualization.DataView(data);
+          view.setColumns([0, 1]);
+          var chart = new google.visualization.PieChart(document.getElementById('piechart'));
+          chart.draw(data, options);
+          }, {escape:true});
+      }
+    </script>
+    <div class="container">
+        <div id="piechart" style="width: 900px; height: 500px;"></div>
+    </div>
+</apex:page>

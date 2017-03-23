@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <fields>
+        <fullName>Currency_Field__c</fullName>
+        <label>Currency Field</label>
+        <precision>18</precision>
+        <scale>0</scale>
+        <type>Currency</type>
+    </fields>
+    <fields>
+        <fullName>DateTime_Field__c</fullName>
+        <label>DateTime_Field</label>
+        <type>DateTime</type>
+    </fields>
+    <fields>
+        <fullName>Date_Field__c</fullName>
+        <label>Date Field</label>
+        <type>Date</type>
+    </fields>
+    <fields>
+        <fullName>EncryptedFieldsFor_All__c</fullName>
+        <label>EncryptedFieldsFor All</label>
+        <length>150</length>
+        <maskChar>X</maskChar>
+        <maskType>all</maskType>
+        <type>EncryptedText</type>
+    </fields>
+    <fields>
+        <fullName>EncryptedFieldsFor_CreditCard__c</fullName>
+        <label>EncryptedFieldsFor CreditCard</label>
+        <length>150</length>
+        <maskChar>X</maskChar>
+        <maskType>creditCard</maskType>
+        <type>EncryptedText</type>
+    </fields>
+    <fields>
+        <fullName>EncryptedFieldsFor_LastFour__c</fullName>
+        <label>EncryptedFieldsFor LastFour</label>
+        <length>150</length>
+        <maskChar>X</maskChar>
+        <maskType>lastFour</maskType>
+        <type>EncryptedText</type>
+    </fields>
+    <fields>
+        <fullName>EncryptedFieldsFor_Nino__c</fullName>
+        <label>EncryptedFieldsFor Nino</label>
+        <length>150</length>
+        <maskChar>X</maskChar>
+        <maskType>nino</maskType>
+        <type>EncryptedText</type>
+    </fields>
+    <fields>
+        <fullName>EncryptedFieldsFor_SIN__c</fullName>
+        <label>EncryptedFieldsFor SIN</label>
+        <length>150</length>
+        <maskChar>X</maskChar>
+        <maskType>sin</maskType>
+        <type>EncryptedText</type>
+    </fields>
+    <fields>
+        <fullName>EncryptedFieldsFor_SSN__c</fullName>
+        <label>EncryptedFieldsFor SSN</label>
+        <length>150</length>
+        <maskChar>X</maskChar>
+        <maskType>ssn</maskType>
+        <type>EncryptedText</type>
+    </fields>
+    <fields>
+        <fullName>EncryptedString_Field__c</fullName>
+        <label>EncryptedString Field</label>
+        <length>150</length>
+        <maskChar>X</maskChar>
+        <maskType>all</maskType>
+        <type>EncryptedText</type>
+    </fields>
+    <fields>
+        <fullName>Percent_Field__c</fullName>
+        <label>Percent Field</label>
+        <precision>18</precision>
+        <scale>0</scale>
+        <type>Percent</type>
+    </fields>
+    <fields>
+        <fullName>Text_Field__c</fullName>
+        <label>Text Field</label>
+        <length>255</length>
+        <type>Text</type>
+    </fields>
+    <label>Sharing Purpose</label>
+    <nameField>
+        <label>Sharing Purpose Name</label>
+        <type>Text</type>
+    </nameField>
+    <pluralLabel>Sharing Purposes</pluralLabel>
+    <searchLayouts/>
+    <sharingModel>Private</sharingModel>
+</CustomObject>

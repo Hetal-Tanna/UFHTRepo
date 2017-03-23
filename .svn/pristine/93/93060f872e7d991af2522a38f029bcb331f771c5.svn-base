@@ -1,0 +1,500 @@
+<!-- 
+ * Page Name: Ultra_Setup
+ * @Description:Designed Visual force page to setup the object's fields
+                for tracking their History. This page shows  all Updateable objects and 
+                there Updateable fields with check boxes.user can paginate the fields.   
+===================================================================================================
+        Version   | Date        | Author             | Comments
+---------------------------------------------------------------------------------------------------
+        1.0       | 15-11-2015  | Eternus Solution   | 1.created page
+        1.1       | 2-01-2016   | Eternus Solution   | 1.Added Pagination for Fields
+        1.2       | 26-02-2016  | Eternus Solution   | 1.Code review changes
+===================================================================================================
+ -->
+<apex:page controller="UltraSetupController" standardStylesheets="false" sidebar="false" docType="html-5.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <script src="/soap/ajax/26.0/connection.js" type="text/javascript"></script>
+    
+    <script src="https://code.jquery.com/ui/1.9.0/jquery-ui.js"></script> 
+<!--     <link rel="stylesheet" href="https://code.jquery.com/ui/1.9.1/themes/base/jquery-ui.css" /> -->
+
+<!--    Refer bootstrap java script and css file from static resource  -->
+    <link href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/css/bootstrap.min.css')}" rel="stylesheet" />
+    <script src="{!URLFOR($Resource.BootStrap, '/bootstrapNew/js/bootstrap.min.js')}"></script>
+    <link href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/font-awesome/css/font-awesome.min.css')}" rel="stylesheet" type="text/css"/>
+    <link
+        href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/css/landing-page1.css')}"
+        rel="stylesheet" />
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/themes/smoothness/jquery-ui.css" />
+
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/jquery-ui.min.js"></script>
+
+<!--   Refer the Css from static resource file "Ultra_Css"  -->
+    <apex:stylesheet value="{!URLFOR($Resource.Ultra_Css)}"></apex:stylesheet>
+    <style>
+      .noSidebarCell {
+       background-color: #f8f8f8;
+    }
+    </style> 
+    <script type="text/javascript">
+     //Funtion to perform select all deselect all functionality from one checkbox
+     function selectAllCheckboxes(receivedInputID) {
+           var inputCheckBox = document.getElementsByTagName("input");
+           var inputCheckBox1 = document.getElementsByClassName("selectAllClass");
+           for(var i=0; i<inputCheckBox.length; i++) {
+               if(inputCheckBox[i].id.indexOf(receivedInputID)!=-1) {
+                   inputCheckBox[i].checked = inputCheckBox1[0].checked; 
+               }
+           } 
+            console.log('Lael'+$(".DeselectAllLabelStyle"));
+           if(inputCheckBox1[0].checked) {
+                $('.SelectAllLabelStyle').text('Deselect All');
+           }
+           else {
+               $('.SelectAllLabelStyle').text('Select All');
+           }
+    }
+
+    //function to set value of selectAll and deselectAll checkbox 
+    function selectDeselect(receivedInputID) {
+        var inputCheckBox = document.getElementsByClassName("selectAllClass");
+        if(inputCheckBox[0].checked==true) {                 
+               inputCheckBox[0].checked = false;
+        }
+        var inputCheckBox1 = document.getElementsByClassName("selectDeselectAll");
+        var flag=1;
+        for(var i=0; i<inputCheckBox1.length; i++) {
+            console.log('all checkbox==='+inputCheckBox1.length);
+                if(inputCheckBox1[i].checked==true) {
+                    flag=1;
+                }
+                else {
+                    flag=0;
+                    break;
+                }
+        }
+        if(flag==1) {
+            inputCheckBox[0].checked = true;
+            $('.SelectAllLabelStyle').text('Deselect All');//
+        } 
+        else{
+        $('.SelectAllLabelStyle').text('Select All');//
+        }     
+    }
+    //Function to display object's fields on enter key press
+    function ShowResult(e){
+        if(e.keyCode== 13){
+            if(j$("input[id$='objectId']").val() == ''){
+                return false;
+            }
+            if(j$("input[id$='objectId']").val())
+                 getSearchResult();
+                   console.log('KeyPress');
+                j$('.DeSelectAllLabelStyle').hide();
+                return false;
+        }   
+      
+    }
+    //Function to clear display result on backKey press
+    function ShowResultkeyup(e){
+        if(j$("input[id$='objectId']").val() == '' && e.keyCode== 8)
+            j$(".outputclass").hide();
+            hideMessage();
+            return false;   
+         console.log('KeyUp');
+    }
+    //JQuery Script to perform autocomplete functionality for searchbox
+    var j$ = jQuery.noConflict();
+    
+    //var sid = '{!$Api.Session_ID}';
+    //var server = "https://" + window.location.host+"/services/Soap/u/26.0";
+    //sforce.connection.init(sid, server);
+    
+    j$(document).ready(function(){
+        j$( "body" ).on( "click", ".ui-dialog-titlebar-close", function( event ) {
+            j$("#dialog").dialog('destroy').remove();
+            setConfigData();
+        });
+        j$('#dialog').hide();
+       //get sObject list and bind to search box
+       funAutoComplete();
+    }); 
+    
+   function funAutoComplete(){
+      var apexObjectList =[];
+      <apex:repeat value="{!objList}" var="objlist">
+               apexObjectList.push('{!objlist}');
+      </apex:repeat>
+        apexObjectList.sort();
+      j$("input[id$='objectId']").autocomplete({
+          source : function( request, response ) {
+                    var matches = j$.map( apexObjectList, function(apexObjectList) {
+                      if ( apexObjectList.toUpperCase().indexOf(request.term.toUpperCase()) === 0 ) {
+                        return apexObjectList;
+                      }
+                    });
+                    response(matches);
+                  },
+          select: function( event, ui ) {
+                j$("input[id$='objectId']").val(ui.item.value);
+                getSearchResult();
+                console.log('AutoComplerte');
+           }
+      });
+     
+        j$("input[id$='objectId']").keypress(function(e){
+          var key=e.keyCode ;
+          if (key==13){
+            j$("input[id$='objectId']").blur();
+          }
+      });
+   }
+    
+   function hideMessage() {
+     j$(".message").hide();
+     funAutoComplete();
+   }
+   //Pop up function
+   function showPopup() {
+     j$("#dialog").dialog({
+        modal: true,
+        draggable: false,
+        resizable: false,
+        show: 'blind',
+        hide: 'blind',
+        width: 723,
+        //position: center
+     });
+     $('.ui-widget-overlay').css('background', '#101010');
+     j$('.label2').hide();
+     return false; 
+   }
+   function saveConfigurationSetting(){
+   //Hide yes and no buttons
+       var numberOfColumnsPicklistValue = j$(".Columns option:selected" ).val();
+       var numberOfFieldsPerColumnsPicklistValue = j$(".Fields option:selected" ).val();
+       var numberOfRecordToDisplayPicklistValue = j$(".Records option:selected" ).val();
+       var sortFieldsValue = j$(".Sort option:selected" ).val();
+       
+       saveAndUpdate(numberOfColumnsPicklistValue,
+                    numberOfFieldsPerColumnsPicklistValue,
+                    numberOfRecordToDisplayPicklistValue,
+                    sortFieldsValue);
+       closeDialog();
+   }
+   
+   function closeDialog(){
+        j$("#dialog").dialog('destroy').remove();
+        //j$('.ui-dialog-titlebar-close').click();
+   }
+   function hideAndShow(){
+       j$('.label2').show();
+       j$('.DialogPanelClass').hide();
+   }
+   function funSetConfigData(){
+        setConfigData();
+   }
+   function popupRemotesiteSettingPage(){ 
+       var win = window.open('apex/CreateRemoteSiteSetting','myWindow','height=300,width=400,status=0,toolbar=0');
+        //win.close();
+        var timer = setInterval(function() {   
+		    if(win.open) {  
+		        clearInterval(timer);  
+		        win.close();
+		         window.location.reload();
+		    }  
+		}, 2000);
+      //  return false;
+   }
+   </script>
+<!--    Browser compatibilty code -->
+    <script src="//cdn.jsdelivr.net/webshim/1.12.4/extras/modernizr-custom.js"> </script>
+    <script src="//cdn.jsdelivr.net/webshim/1.12.4/polyfiller.js"> </script>
+    <script>
+         webshims.setOptions('waitReady', false);
+         webshims.setOptions('forms-ext', {
+          types : 'date'
+         });
+        webshims.polyfill('forms forms-ext'); 
+    </script>
+    <div class="bs PageSizeDiv" style="background-color: #f8f8f8;margin-bottom: 7% !important; ">
+    <div class="content-section-a" style="margin-top: -5px;margin-left: 54px; background-color: #f8f8f8;">
+    <div class="container">
+    <div class="content" style="margin-top: -56px !important;margin-left: -60px !important;padding: 30px;!important">
+        <apex:form id="frm" style="margin-top: -18px !important;">
+           <script>
+            if(j$("input[id$='objectId']").val() == ''){
+                j$(".outputclass").hide();
+            }
+            function endLoading(){
+                $('.loadingBox').hide();
+            }
+        </script>
+        <script>j$('#dialog').hide();</script>
+            <div>
+                <apex:image url="{!URLFOR($Resource.HistoricalDataImage) }"
+                    width="50px"  style="margin:5px"/>
+                <apex:outputLabel value="{!$Label.Setup_Page_Title}"
+                    styleClass="PageTitleLabelStyle" />
+                <apex:outputPanel id="ConfigPanel" rendered="{!NOT(isRemoteSiteSettings)}">
+                <apex:commandLink oncomplete="showPopup()" reRender="ConfigPanelDiv" 
+                    style="float: right !important;padding-top: 22px !important; outline: 0;"
+                    type="image/png" title="Configure Layout">
+               <i class="fa fa-cog fa-2x cog-gear"></i>
+             </apex:commandLink>
+             </apex:outputPanel>
+             
+             <apex:outputPanel id="panelRemoteSiteSettingMessage1" rendered="{! isRemoteSiteSettings}">
+                <div style="background-color: #ffc;
+                			border: solid 1px;
+                			padding: 14px 29px 14px 16px;
+                			margin: 15px 35px;
+                			border-color: #390;">
+                 <h4> {!$Label.RemoteSiteSettingNotAddedPart1} 
+                  <apex:commandLink value=" click here" onclick="popupRemotesiteSettingPage();" reRender="abc"/> 
+                  {!$Label.RemoteSiteSettingNotAddedPart2} 
+                  </h4> 
+                </div>
+             </apex:outputPanel>
+            </div>
+                <apex:outputPanel id="MessagePanel">
+                    <script>j$('.messageText >').hide();</script>
+                        <b> <apex:pageMessages /></b>
+                </apex:outputPanel>
+                <apex:outputPanel id="MessagePanel1">
+                    <script>j$('.messageText >').hide();</script>
+                        <b> <apex:pageMessages /> </b>
+                </apex:outputPanel>
+            <apex:outputPanel id="MainPanel">
+            <apex:pageBlock id="pageblock0" mode="maindetail" rendered="{!NOT(isRemoteSiteSettings)}">
+              <!--        Action status to show proccess of retriving fields of selected object  -->
+                            <apex:actionStatus id="actStatusId" layout="block"  onstop="endLoading();">
+                                <apex:facet name="start">
+                                    <div id="assign-action-spinner-main">
+                                        <div id="assign-action-spinner-content">
+                                                <img src="/img/analytics/reportbuilder/icons/spinner32.gif" 
+                                                alt="Processing..." title="Processing..." />
+                                                <p>Processing...</p>
+                                        </div>
+                                    </div>
+                                </apex:facet>
+                            </apex:actionStatus>
+                        <div class="panel">
+                            <div class="panel-heading">
+                            <div class="row">
+                                <div class="col-lg-3 col-md-3 col-sm-3">
+                                <div class="form-group">
+                                      <apex:outputLabel value="{!$Label.Ultra_Choose_an_Object}" styleClass="asterix" />
+                                       <apex:inputText value="{!objects}" id="objectId"
+                                               onkeypress="return ShowResult(event);"
+                                               onkeyup="return ShowResultkeyup(event)" 
+                                               html-autocomplete="off"
+                                               StyleClass="form-control required"
+                                               style="margin-top: 5px!important; width: 500px !important;"
+                                               html-placeholder="Object Label/API Name" >
+                                      </apex:inputText>
+                                </div>
+                                </div>
+                            </div>
+                            </div>
+                         <apex:outputPanel id="MainOutputPanal" styleClass="outputclass">
+                         <script>
+                            // To hide the success/warning message  
+                             j$('.outputclass').on('click', '*', function() {
+                                    j$(".message").hide();
+                             });
+                             // To set the select all checkbox label
+                             var inputCheckBox1 = document.getElementsByClassName("selectAllClass");
+                             if(inputCheckBox1[0].checked) {
+                                $('.SelectAllLabelStyle').text('Deselect All');
+                             }
+                             else {
+                               $('.SelectAllLabelStyle').text('Select All');
+                             }
+                             
+                             j$(".ui-autocomplete").hide();
+                         </script>
+                            <apex:outputPanel rendered="{!isObject}" id="fieldSection">
+                            <div class="panel-body">
+                            <div style="padding-bottom: 9px !important;">
+                                <apex:outputlabel value="{!$Label.Ultra_Select_Fields}" styleClass="FieldSectionTitleStyle"/>
+                                <div class="base-checkbox" style="display: inline-block !important; float: right !important; margin-top:0px !important">
+                                   <div class="check-employee">
+                                <apex:inputCheckbox onclick="selectAllCheckboxes('inputId')" id="selectAll"
+                                    value="{!isAllSelected}"
+                                    styleClass="checkboxClass selectAllClass"
+                                    rendered="{!isObject}"
+                                    title="Select All Fields">
+                                    <apex:actionSupport event="onchange" action="{!SelectAllCheckboxes}" reRender="resultPanel"/>
+                                </apex:inputCheckbox> 
+                                <apex:outputlabel value="Select All" rendered="{!isObject}" styleClass="SelectAllLabelStyle"/>
+                                </div>
+                                </div>
+                           </div>
+                            <apex:outputPanel id="resultPanel">
+                              <div style="max-height: 200px;overflow-y: scroll;overflow-x: hidden;">
+                                <apex:outputPanel rendered="{!isObject}">
+                                    <table width="100%" class="table-responsive" style="margin-left: 3%!important;">
+                                        <apex:repeat value="{!lstOfLstWrapperClass}" var="Wraper">
+                                             <tr>
+                                                <apex:repeat value="{!Wraper}" var="w">
+                                                    <td class="CheckboxColumnStyle">
+                                                    <div class="base-checkbox">
+                                                        <div class="check-employee">
+                                                            <apex:inputCheckbox value="{!w.isSelected}" id="inputId"
+                                                                onChange="selectDeselect('inputid')"
+                                                                style="background-color:#fff !important;margin-top: 2px;"
+                                                                styleClass="checkboxClass selectDeselectAll" 
+                                                                title="Select Field to track"/>
+                                                           <apex:outputlabel value="{!w.fieldLabel}" style="word-wrap: break-word !important"/>
+                                                        </div>
+                                                    </div>
+                                                    </td>
+                                                </apex:repeat>
+                                            </tr>
+                                        </apex:repeat>
+                                    </table>
+                                </apex:outputPanel>
+                                </div>
+                  <!--                       Pagination Buttons And page count -->
+                                <div>
+                                <div class="pagination" style="border-bottom: 2px solid #f2f2f2 !important; padding-top: 1px;  margin-bottom: 5px;">
+                                    <div class="page-counter" style="margin-top: 15px;">
+<!--                                           <apex:outputLabel value="Showing {!displayFieldCount} out of {!totalSize}"/> -->
+                                          <apex:outputLabel value="Showing {!(pageNumber*pageSize)+1-pageSize} - {!IF((pageNumber*pageSize)>totalSize, totalSize,(pageNumber*pageSize))} of {!totalSize} fields"
+                                                                        style="margin-left: 5px;margin-right: 34%;"/>
+                                    </div>
+                                    <div class="page-actions">
+                                    <apex:outputPanel id="navigateButtons">
+                                          <apex:commandButton action="{!first}" title="First" status="actStatusId"
+                                              image="{!IF(hasPrevious,URLFOR($Resource.BootStrap,'/bootstrapNew/images/First-arrow-disabled.png'),
+                                              URLFOR($Resource.BootStrap,'/bootstrapNew/images/First-arrow.png'))}"
+                                              styleclass="first-btn"
+                                              style="background-color:#fff !important;border: none;vertical-align: bottom;"
+                                              disabled="{!hasPrevious}" reRender="resultPanel" 
+                                              onComplete="funAutoComplete();"/>
+                                          <apex:commandButton action="{!Previous}" title="Previous" status="actStatusId"
+                                              image="{!IF(hasPrevious,URLFOR($Resource.BootStrap,'/bootstrapNew/images/previous-arrow-disabled.png'),
+                                              URLFOR($Resource.BootStrap,'/bootstrapNew/images/previous-arrow.png'))}"
+                                              styleclass="previous-btn"
+                                              style="background-color:#fff !important;border: none;vertical-align: bottom;"
+                                              disabled="{!hasPrevious}" reRender="resultPanel"
+                                              onComplete="funAutoComplete()"/>
+                                          <apex:commandButton action="{!Next}" title="Next" status="actStatusId" 
+                                              image="{!IF(hasNext,URLFOR($Resource.BootStrap,'/bootstrapNew/images/next-arrow-disabled.png'),
+                                              URLFOR($Resource.BootStrap,'/bootstrapNew/images/next-arrow.png'))}"
+                                              style="background-color:#fff !important; border: none;vertical-align: bottom;"
+                                              styleclass="next-btn" disabled="{!hasNext}"
+                                              reRender="resultPanel"
+                                              onComplete="funAutoComplete();"/>
+                                          <apex:commandButton action="{!last}" title="Last" status="actStatusId"
+                                              image="{!IF(hasNext,URLFOR($Resource.BootStrap,'/bootstrapNew/images/latest-arrow-disabled.png'),
+                                              URLFOR($Resource.BootStrap,'/bootstrapNew/images/latest-arrow.png'))}"
+                                              styleclass="last-btn"
+                                              style="background-color:#fff !important;border: none;vertical-align: bottom;"
+                                              disabled="{!hasNext}" reRender="resultPanel"
+                                              onComplete="funAutoComplete();"/>
+                                    </apex:outputPanel>
+                                   </div>
+                                </div>
+                                </div>
+                     <!--                Save and Cancel buttons  -->
+                                <apex:outputpanel id="buttonSectionID">
+                                <div class="final-btns" >
+                                        <apex:commandButton id="btnSave" action="{!SelectedFieldsName}"
+                                                            Value="Save"
+                                                            Title="Save Setting"
+                                                            styleclass="btn btn-sm btn-primary SaveSettingButtonStyle"
+                                                            reRender="buttonSectionID,MessagePanel"
+                                                            onComplete="getSearchResult();"
+                                                            status="actStatusId"/>
+                               </div>
+                               </apex:outputpanel> 
+                             </apex:outputPanel>
+                            </div> 
+                          <script>j$('#dialog').hide();</script>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </div> 
+        <!--                 popup code start -->
+                <div id="dialog" title="Configure Layout">
+                    <div class="DialogPanelClass">
+                    <apex:outputPanel id="dialogP">
+                    <div class="bs">
+                    <div class="row">
+                    
+                        <div class="col-lg-6 col-md-6 col-sm-6">
+                            <div class="form-group small">
+                                  <label class="asterix">{!$Label.Number_Of_Columns}</label>
+                                    <apex:selectList value="{!numberOfColumnsPicklistValue}" size="1" styleClass="form-control Columns FontStyle ">
+                                  <apex:selectOptions value="{!configObj.numberOfColValues}"/>
+                              </apex:selectList>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 col-md-6 col-sm-6">
+                        <div class="form-group small">
+                              <label class="asterix">{!$Label.Number_Of_Fields_Per_Column}</label>
+                                <apex:selectList value="{!numberOfFieldsPerColumnsPicklistValue}" size="1" styleClass="form-control Fields FontStyle ">
+                                    <apex:selectOptions value="{!configObj.numberOfFieldsPerColValues}"/>
+                                </apex:selectList>
+                        </div>
+                     </div>
+                     
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-6 col-md-6 col-sm-6">
+                            <div class="form-group small">
+                                  <label class="asterix" style="margin-top: 14px !important;">{!$Label.Sort_fields_by_alphabetically}</label>
+                                    <apex:selectList value="{!sortFieldsValue}" size="1" styleClass="form-control Sort FontStyle ">
+                                    <apex:selectOptions value="{!configObj.sortFieldsByValues}"/>
+                                </apex:selectList>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 col-md-6 col-sm-6">
+                        <div class="form-group small">
+                              <label class="asterix">{!$Label.NumberOfHistoryRecordsToDisplay}</label>
+                                <apex:selectList value="{!numberOfRecordToDisplayPicklistValue}" size="1" styleClass="form-control Records FontStyle">
+                                        <apex:selectOptions value="{!configObj.numberOfHistoryRecordsToDisplay}"/>
+                           </apex:selectList>
+                        </div>
+                     </div>
+                     
+                    </div>
+                    </div>
+                       <table>  
+                          <tr><td style="float: right;margin-right: 25px;margin-top: 10px;">
+                              <div class="final-btns" >
+                              <apex:commandButton value="Save" onClick="hideAndShow();" 
+                              styleClass="btn btn-sm btn-primary" oncomplete="saveConfigurationSetting();"/>
+                              <apex:commandButton value="Cancel" oncomplete="funSetConfigData();" 
+                                                  onClick="closeDialog();" 
+                                                  styleclass="btn btn-sm btn-default"/>
+                              </div>
+                          </td> </tr>  
+                     </table>
+                    </apex:outputPanel>  
+                    </div>
+                       <center> <b> <p><apex:outputLabel value="Saving...." styleClass="label2"/></p></b></center>
+                </div>
+<!--                 popup code end -->
+                <div style="margin-top: 4px"></div>
+            </apex:pageBlock>
+            </apex:outputPanel>
+            <!--         Action Funtion to call controller methods when user select object -->
+            <apex:actionFunction name="getSearchResult" reRender="MessagePanel1,MainOutputPanal" action="{!refresh}" status="actStatusId"/>
+            <apex:actionFunction name="saveAndUpdate" action="{!saveAndUpdateConfigurationSetting}" reRender="frm">
+                 <apex:param name="numberOfColumnsPicklistValue" value="" assignTo="{!numberOfColumnsPicklistValue}" />
+                 <apex:param name="numberOfFieldsPerColumnsPicklistValue" value="" assignTo="{!numberOfFieldsPerColumnsPicklistValue}" />
+                 <apex:param name="numberOfRecordToDisplayPicklistValue" value="" assignTo="{!numberOfRecordToDisplayPicklistValue}" />
+                 <apex:param name="sortFieldsValue" value="" assignTo="{!sortFieldsValue}" />
+          </apex:actionFunction>
+          <apex:actionFunction name="setConfigData" reRender="frm" action="{!getConfigurationSettingData}"/>
+          <apex:actionFunction name="getTriggerableObjList" action="{!getObjectList}" reRender="MainPanel"/>
+        </apex:form>
+    </div>
+    </div>
+    </div>
+    </div>
+</apex:page>

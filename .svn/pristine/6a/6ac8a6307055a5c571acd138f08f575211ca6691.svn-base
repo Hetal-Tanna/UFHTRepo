@@ -1,0 +1,733 @@
+/**
+ * @Class Name: DynamicTriggerGenericHandler.
+ * @Description: This class is generic handler for all dynamically generated triggers.
+ *               This stores the History data in attachment under Ultra_Track_Container__c object in JSON Format.
+ * ====================================================================================================================
+ *       Version   | Date        | Author             | Comments
+ *   ------------------------------------------------------------------------------------------------------------------
+ *       1.0       | 16/11/2015  | Eternus Solutions   | 1. Created Class for above functionality.
+ * ====================================================================================================================
+**/
+
+global with sharing class DynamicTriggerGenericHandler {
+
+    // Attachment object to create or update the attachment.
+    public Attachment attchmentObj;
+    // List of attachment to insert or update the attachments
+    public list<Attachment> attachmentsToUpsertList;
+    // Map to hold the field name and metadata
+    public static map<String, Schema.SObjectField> fieldVsFieldSchemaMap;
+    // Map of wrapper class "UltraTrackWrapper" to deserialize and serialize history data
+    public map<String, list<UFHT.HistoryWrapper>> fieldVsHistoryWrapperMap;
+    // Integer variable to store Attachment file size
+    public Integer fileSize;
+    // List to hold the history data and insert into attachment file.
+    list<UFHT.HistoryWrapper> historyWrapperList;
+    // Map to store record Id vs record name
+    public static map<Id, String> idVsRecordNameMap;
+    // Map to hold the record Id vs Set of fields from record
+    public static map<Id, set<String>> idVsRecordFieldsMap;
+    // Set to store the Ids of parent relationship field
+    public static set<Id> parentIdSet;
+    // Set to store relationship fields name
+    public static set<String> relationshipFieldsSet;
+    // Map to hold the object name and Ultra_Track_Container__c object
+    public map<String, UFHT__Ultra_Track_Container__c> savedObjectFieldsMap;
+    // List of Ultra_Track_Container__c to get selected field list
+    UFHT__Ultra_Track_Container__c ultraTrackContainerObj;
+    // List Id of Container record Id's to query against attachment.
+    list<Id> utcIdList;
+    // Boolean variable to avoid recursion of trigger.
+    global static boolean hasAlreadyRun = false;
+    
+    global static map<String, Boolean> verifyRecursiveCallForAnObjectMap = new map<String, Boolean>();
+
+    /**
+     * @Author: Eternus Solutions
+     * @Description: Constructor to initialize member variables of class.
+     * @Param:
+     * @Return: None
+     * @Date: 29/02/2016
+     **/
+    global DynamicTriggerGenericHandler() {
+        relationshipFieldsSet = new set<String>();
+        parentIdSet = new set<Id>();
+        idVsRecordNameMap = new map<Id, String> ();
+        idVsRecordFieldsMap = new map<Id, set<String>>();
+        fieldVsFieldSchemaMap = new map<String, Schema.SObjectField>();
+        utcIdList = new list<Id>();
+        fileSize = 0;
+    }
+
+    /**
+     * @Author: Eternus Solutions
+     * @Description: Method to create or update Attachment file on update of sObject record.
+     * @Param: It takes trigger.newMap, trigger.oldMap and objectName as string.
+     * @Return: None
+     * @Date: 29/02/2016
+     **/
+    global void onUpdateStoreHistoryData(map<Id, sObject> newRecordsMap,
+                                         map<Id, sObject> oldRecordsMap,
+                                         String objectName) {
+        
+       if(!(UltraTrackUtility.checkObjectAndFieldLevelSecurity('UFHT__Ultra_Track_Container__c', 
+                                                               new list<String> {'UFHT__Tracked_Fields__c','UFHT__Is_Tracking_Enabled__c','UFHT__Object_Name__c'},
+                                                               'isAccessible') 
+            && UltraTrackUtility.checkObjectAndFieldLevelSecurity('UFHT__Ultra_Track_Container__c', 
+                                                                new list<String> {'UFHT__Tracked_Fields__c','UFHT__Is_Tracking_Enabled__c','UFHT__Object_Name__c'},
+                                                               'isUpdate')
+            && UltraTrackUtility.checkObjectAndFieldLevelSecurity('UFHT__Ultra_Track_Container__c', 
+                                                                new list<String> {'UFHT__Tracked_Fields__c','UFHT__Is_Tracking_Enabled__c','UFHT__Object_Name__c'},
+                                                               'isInsert'))){
+                if(!Trigger.isExecuting && ApexPages.CurrentPage() <> null){
+                    UltraTrackUtility.displayMessage(ApexPages.Severity.ERROR, System.Label.GenericError);
+                }
+             return ;
+        }
+        
+        if(!(UltraTrackUtility.checkObjectAndFieldLevelSecurity('Attachment', 
+                                                               new list<String> {'Body','Name'},
+                                                               'isAccessible') 
+            && UltraTrackUtility.checkObjectAndFieldLevelSecurity('Attachment', 
+                                                                new list<String> {'Body','Name'},
+                                                               'isUpdate')
+            && UltraTrackUtility.checkObjectAndFieldLevelSecurity('Attachment', 
+                                                                new list<String> {'Body','Name'},
+                                                               'isInsert'))){
+             if(!Trigger.isExecuting && ApexPages.CurrentPage() <> null){
+                    UltraTrackUtility.displayMessage(ApexPages.Severity.ERROR, System.Label.GenericError);
+                }                                                  
+             
+             return ;
+        }
+                                   
+        list<String> selectedFieldsList;
+        Date todayDate;
+        savedObjectFieldsMap = new map<String, UFHT__Ultra_Track_Container__c>();
+        map<Id, Attachment> utcIdVsAttachmentMap = new map<Id, Attachment>();
+        attachmentsToUpsertList = new list<Attachment>();
+
+        if(String.isNotBlank(objectName)) {
+            selectedFieldsList = new list<String>();
+            try {
+                ultraTrackContainerObj = [SELECT UFHT__Tracked_Fields__c,
+                                                 UFHT__Is_Tracking_Enabled__c,
+                                                 UFHT__Object_Name__c
+                                            FROM UFHT__Ultra_Track_Container__c
+                                           WHERE UFHT__Object_Name__c = : objectName
+                                           LIMIT 1];
+            } catch(QueryException e) {
+                
+            }
+
+            //process only if Is_Tracking_Enabled__c is enabled
+            if(ultraTrackContainerObj != null && ultraTrackContainerObj.UFHT__Is_Tracking_Enabled__c
+            && newRecordsMap != null && oldRecordsMap != null) {
+
+                savedObjectFieldsMap.put(ultraTrackContainerObj.UFHT__Object_Name__c, ultraTrackContainerObj);
+                utcIdList.add(ultraTrackContainerObj.Id);
+                if(String.isNotBlank(ultraTrackContainerObj.UFHT__Tracked_Fields__c)) {
+                    ultraTrackContainerObj.UFHT__Tracked_Fields__c = String.valueOf(ultraTrackContainerObj.UFHT__Tracked_Fields__c.remove(UFHTConstants.WHITE_SPACE));
+                    selectedFieldsList = ultraTrackContainerObj.UFHT__Tracked_Fields__c.split(UFHTConstants.COMMA);
+                }
+                //get Fields of records from trigger.new and trigger.old
+                idVsRecordFieldsMap = getFieldsFromRecords(newRecordsMap, oldRecordsMap);
+                // Get relationship fields from trigger.new record and trigger.old
+                relationshipFieldsSet = getRelationshipFields(objectName, selectedFieldsList);
+                // Get parentIds from relationship fields.
+                parentIdSet = (relationshipFieldsSet != null && !relationshipFieldsSet.isEmpty())
+                             ? getAllParentRecordIds(relationshipFieldsSet,
+                                                     newRecordsMap,
+                                                     oldRecordsMap)
+                             : parentIdSet;
+
+                //Get Record Name from ParentId
+                idVsRecordNameMap = (parentIdSet != null && !parentIdSet.isEmpty())
+                                  ? getIdVsRecordNameMap(parentIdSet)
+                                  : idVsRecordNameMap;
+
+                //Call method to get attachments related to Ultra_Track_Container__c object
+                utcIdVsAttachmentMap = (!utcIdList.isEmpty())
+                                     ? getAttachmentsRelatedToUTC(utcIdList)
+                                     : utcIdVsAttachmentMap;
+
+                // if attachment is present for Container record
+                if(savedObjectFieldsMap.containsKey(objectName) &&
+                   String.isNotBlank(savedObjectFieldsMap.get(objectName).Id) &&
+                   utcIdVsAttachmentMap.containsKey(savedObjectFieldsMap.get(objectName).Id)) {
+
+                    attchmentObj = utcIdVsAttachmentMap.get(savedObjectFieldsMap.get(objectName).Id);
+                    if(attchmentObj != null) {
+                        fileSize = attchmentObj.BodyLength;
+                        fieldVsHistoryWrapperMap = (map<String, list<UFHT.HistoryWrapper>>)System.JSON.deserialize(
+                                                    attchmentObj.body.toString(), map<String, list<UFHT.HistoryWrapper>>.class);
+                    }
+                    //iterate all selected fields
+                    getAndInsertHistoryAttachment(objectName,
+                                                  selectedFieldsList,
+                                                  newRecordsMap,
+                                                  oldRecordsMap);
+                }
+
+                // if attachment is not present for Container record
+                else if(!utcIdVsAttachmentMap.containsKey(savedObjectFieldsMap.get(objectName).Id)) {
+
+                    fieldVsHistoryWrapperMap = new map<String, list<UFHT.HistoryWrapper>>();
+                    todayDate = System.Today();
+                    if(!(UltraTrackUtility.checkObjectAndFieldLevelSecurity('Attachment', 
+                                                                            new list<String> {'Name','contentType','isPrivate'},
+                                                                           'isUpdate')
+                        && UltraTrackUtility.checkObjectAndFieldLevelSecurity('Attachment', 
+                                                                            new list<String> {'Name','contentType','isPrivate'},
+                                                                           'isInsert'))){
+                          if(!Trigger.isExecuting && ApexPages.CurrentPage() <> null){
+                            UltraTrackUtility.displayMessage(ApexPages.Severity.ERROR, System.Label.GenericError);
+                         }
+                         return ;
+                    }
+                    attchmentObj = new Attachment(
+                        ParentId = savedObjectFieldsMap.get(objectName).Id,
+                        Name = System.Label.AttachmentFileName + UFHTConstants.START_DATE_PREFIX
+                             + DateTime.newInstance(todayDate.year(),
+                                                    todayDate.month(),
+                                                    todayDate.day()).format(UFHTConstants.DATE_FORMAT)
+                             + UFHTConstants.FILE_EXTENSION_TXT,
+                        contentType = UFHTConstants.CONTENT_TYPE_TEXT,
+                        isPrivate = false
+                    );
+                   
+                    //iterate all selected fields
+                    getAndInsertHistoryAttachment(objectName,
+                                                  selectedFieldsList,
+                                                  newRecordsMap,
+                                                  oldRecordsMap);
+                }
+            }
+        }
+    }
+
+    /**
+     * @Author: Eternus Solutions
+     * @Description: Method to fetch and insert/update attachment for history records.
+     * @Param: 1. objectName: Name of object.
+     *         2. selectedFieldsList: List of tracked fields for an object.
+     *         3. newRecordsMap: Map of new records.
+     *         4. oldRecordsMap: Map of old records.
+     * @Return:
+     * @Date: 15/07/2016
+     **/
+    public void getAndInsertHistoryAttachment(String objectName,
+                                              list<String> selectedFieldsList,
+                                              map<Id, sObject> newRecordsMap,
+                                              map<Id, sObject> oldRecordsMap) {
+
+        if(String.isBlank(objectName)
+        || selectedFieldsList == null
+        || newRecordsMap == null
+        || oldRecordsMap == null
+        || !UltraTrackUtility.isAllowDML()) {
+            return;
+        }
+
+        list<String> currencyOrPercentEncryptedFieldvalueList = new list<String>();
+        Boolean isPercentCurrencyOrEncrypted;
+        String oldValue, newValue;
+        HistoryWrapper historyWrapperObj;
+
+        attachmentsToUpsertList = new List<Attachment>();
+
+        for(String selectedField : selectedFieldsList) {
+            historyWrapperList = new list<UFHT.HistoryWrapper>();
+            
+            Schema.DisplayType currentFieldType = UltraTrackUtility.getFieldType(objectName, selectedField);
+            isPercentCurrencyOrEncrypted =  (currentFieldType != null
+                                         && (  currentFieldType == Schema.DisplayType.Currency
+                                            || currentFieldType == Schema.DisplayType.Percent
+                                            || currentFieldType == Schema.DisplayType.EncryptedString));
+            
+            // Iterate all trigger.new records
+            for(sObject record : newRecordsMap.values()) {
+
+                // Check old and new values of field is different
+                if(idVsRecordFieldsMap != null
+                && idVsRecordFieldsMap.containsKey(record.Id)
+                && idVsRecordFieldsMap.get(record.Id).contains(selectedField)
+                && oldRecordsMap.containsKey(record.Id)
+                && isFieldValueChanged(String.valueOf(record.get(selectedField)),
+                                       String.valueOf(oldRecordsMap.get(record.Id).get(selectedField))) ) {
+                    if(isPercentCurrencyOrEncrypted) {
+                        currencyOrPercentEncryptedFieldvalueList = UltraTrackUtility.checkCurrencyOrPercentField(objectName,
+                                                                   record,
+                                                                   oldRecordsMap.get(record.Id),
+                                                                   selectedField,
+                                                                   String.valueOf(oldRecordsMap.get(record.Id).get(selectedField)),
+                                                                   String.valueOf(record.get(selectedField))
+                                                                   );
+                        if(currencyOrPercentEncryptedFieldvalueList != null
+                            && currencyOrPercentEncryptedFieldvalueList.size() >= 2) {
+
+                            oldValue = currencyOrPercentEncryptedFieldvalueList[0];
+                            newValue = currencyOrPercentEncryptedFieldvalueList[1];
+                        }
+                        
+                        else {
+                            oldValue = UFHTConstants.EMPTY_STRING;
+                            newValue = UFHTConstants.EMPTY_STRING;
+                        }
+                    }
+                    else if(currentFieldType == Schema.DisplayType.DateTime) {
+                           oldValue = oldRecordsMap.get(record.Id).get(selectedField) != null ?
+                                      Datetime.valueOf(oldRecordsMap.get(record.Id).get(selectedField)).formatGMT(UFHTConstants.DATE_TIME_FORMAT) :
+                                       String.valueOf(oldRecordsMap.get(record.Id).get(selectedField));
+                           newValue = record.get(selectedField) != null ?
+                                      Datetime.valueOf(record.get(selectedField)).formatGMT(UFHTConstants.DATE_TIME_FORMAT) :
+                                       String.valueOf(record.get(selectedField));
+                         
+                    }
+                    else if(currentFieldType == Schema.DisplayType.Date) {
+
+                        Date oldValueDate;
+                        Date newValueDate; 
+                        
+                        if(oldRecordsMap.get(record.Id).get(selectedField) != null) {
+                           oldValueDate =  Date.valueOf(oldRecordsMap.get(record.Id).get(selectedField));
+                        }
+                        if(record.get(selectedField) != null) {
+                           newValueDate = Date.valueOf(record.get(selectedField));
+                        }
+                        
+                        oldValue = oldValueDate != null ?
+                                   Datetime.valueOf(DateTime.newInstance(oldValueDate.year(), oldValueDate.month(), oldValueDate.day(), 0 , 0 , 0)).formatGMT(UFHTConstants.DATE_TIME_FORMAT) :
+                                   String.valueOf(oldRecordsMap.get(record.Id).get(selectedField));
+                        newValue = newValueDate != null ?
+                                   Datetime.valueOf(DateTime.newInstance(newValueDate.year(), newValueDate.month(), newValueDate.day(), 0 , 0 , 0)).formatGMT(UFHTConstants.DATE_TIME_FORMAT) :
+                                   String.valueOf(record.get(selectedField));
+                    }
+                    else if(oldRecordsMap.containsKey(record.Id)) {
+                        oldValue = String.valueOf(oldRecordsMap.get(record.Id).get(selectedField));
+                        newValue = String.valueOf(record.get(selectedField));
+                    }
+                    historyWrapperObj = getHistoryWrapperInstance(selectedField,
+                                                                  oldValue,
+                                                                  newValue,
+                                                                  String.valueOf(record.get(UFHTConstants.ID_FIELD)),
+                                                                  String.valueOF(record.get(UFHTConstants.LAST_MODIFIED_BY_FIELD)),
+                                                                  (DateTime) record.get(UFHTConstants.LAST_MODIFIED_DATE_FIELD));
+                    
+                    if(historyWrapperObj != null) {
+                        historyWrapperList.add(historyWrapperObj);
+                    }
+                }
+            }
+
+            if(!historyWrapperList.isEmpty()) {
+                // Check attachment length exceeds or not for every record
+                createOrUpdateAttachment(historyWrapperList, selectedField, objectName);
+                
+            }
+        }
+
+
+        if(attchmentObj.Body != null
+        && String.isNotBlank(String.valueOf(attchmentObj.Body))) {
+            attachmentsToUpsertList.add(attchmentObj);
+        }
+
+        // Update or insert attachment
+        
+        if(!attachmentsToUpsertList.isEmpty()) {
+            try {
+                upsert attachmentsToUpsertList;  
+            }
+            catch(DMLException e) {
+                // @NOTE: We can not add error here as it will stop record saving.
+            }
+        }
+    }
+
+    /**
+     * @Author: Eternus Solutions
+     * @Description: Method to check attachment size and create new attachments if size exceeded.
+     * @Param: It takes 3 parameters hisoryWrapper class's list and field and object name as string
+     * @Return:
+     * @Date: 27/05/2016
+     **/
+    public void createOrUpdateAttachment(list<UFHT.HistoryWrapper> pHistoryWrapperList,
+                                        String selectedFieldName,
+                                        String strObjName) {
+       
+        if(!UltraTrackUtility.isAllowDML()) {
+            return ;
+        } 
+        if(pHistoryWrapperList != null
+        && !pHistoryWrapperList.isEmpty()
+        && String.isNotBlank(selectedFieldName)
+        && String.isNotBlank(strObjName)
+        && fieldVsHistoryWrapperMap != null) {
+
+            Date todayDate;
+            Integer recordCount = 0;
+
+            for(list<UFHT.HistoryWrapper> wrapperList : fieldVsHistoryWrapperMap.values()) {
+                recordCount += wrapperList.size();
+            }
+            for(UFHT.HistoryWrapper wrapperObj : pHistoryWrapperList) {
+
+                if(fileSize <= UFHTConstants.MAX_BODY_LENGTH && recordCount < UFHTConstants.MAX_RECORD_COUNT) {
+
+                    if(fieldVsHistoryWrapperMap.containsKey(selectedFieldName)) {
+                        fieldVsHistoryWrapperMap.get(selectedFieldName).add(wrapperObj);
+                    }
+
+                    else {
+                        fieldVsHistoryWrapperMap.put(selectedFieldName, new list<UFHT.HistoryWrapper>{wrapperObj});
+                    }
+
+                    fileSize = fileSize + JSON.serialize(wrapperObj).length();
+                    ++ recordCount;
+                }
+
+                else {
+                   
+                    todayDate = System.Today();
+                    attchmentObj.Body = Blob.valueOf(JSON.serialize(fieldVsHistoryWrapperMap));
+                    
+                    if(!attchmentObj.Name.contains(UFHTConstants.END_DATE_PREFIX)) {
+                        attchmentObj.Name = attchmentObj.Name.substring(0, attchmentObj.Name.indexOf(UFHTConstants.FILE_EXTENSION_TXT))
+                                          + UFHTConstants.END_DATE_PREFIX + DateTime.newInstance(todayDate.year(),
+                                                                                  todayDate.month(),
+                                                                                  todayDate.day()).format(UFHTConstants.DATE_FORMAT)
+                                          + UFHTConstants.FILE_EXTENSION_TXT;
+                    }
+
+                    fileSize = 0;
+                    recordCount = 0;
+
+                    if(attchmentObj.Body != null
+                    && String.isNotBlank(String.valueOf(attchmentObj.body))) {
+                       
+                            attachmentsToUpsertList.add(attchmentObj);
+                        
+                    }
+
+                    fieldVsHistoryWrapperMap = new map<String, list<UFHT.HistoryWrapper>>();
+                    fieldVsHistoryWrapperMap.put(selectedFieldName, new list<UFHT.HistoryWrapper>{wrapperObj});
+
+                    attchmentObj = new Attachment(
+                        ParentId = savedObjectFieldsMap.get(strObjName).Id,
+                        Name = System.Label.AttachmentFileName + UFHTConstants.START_DATE_PREFIX
+                             + DateTime.newInstance(todayDate.year(),
+                                                    todayDate.month(),
+                                                    todayDate.day()).format(UFHTConstants.DATE_FORMAT)
+                             + UFHTConstants.FILE_EXTENSION_TXT,
+                        contentType = UFHTConstants.CONTENT_TYPE_TEXT,
+                        isPrivate = false
+                    );
+
+                    ++ recordCount;
+                }
+             }
+
+             if(!fieldVsHistoryWrapperMap.isEmpty()) {
+                attchmentObj.body = blob.valueOf(JSON.serialize(fieldVsHistoryWrapperMap));
+            }
+        }
+    }
+
+    /**
+     * @Author: Eternus Solutions
+     * @Description: Method to get the all fields from trigger.new and trigger.old records
+     * @Param: Trigger.newMap and trigger, oldMap
+     * @Return: It returns record id vs Set of fields.
+     * @Date: 6/6/2016
+     **/
+    public static map<Id, set<String>> getFieldsFromRecords(map<Id, sObject> newRecordsMap,
+                                                             map<Id, sObject> oldRecordsMap) {
+
+        map<Id, set<String>> recordIdVsFieldsMap = new map<Id, set<String>>();
+
+        if(newRecordsMap != null && oldRecordsMap != null) {
+            for(sObject record : newRecordsMap.values()) {
+                recordIdVsFieldsMap.put(record.Id, UltraTrackUtility.getFields(record, oldRecordsMap.get(record.Id)));
+            }
+        }
+
+        return recordIdVsFieldsMap;
+    }
+
+    /**
+     * @Author: Eternus Solutions
+     * @Description: Method to check old field value and new field values are different.
+     * @Param: It takes old value and new value as string
+     * @Return: It returns boolean value
+     * @Date: 17/05/2016
+     **/
+    public Boolean isFieldValueChanged(String newFieldValue, String oldFieldValue) {
+        if(newFieldValue == null){newFieldValue = UFHTConstants.EMPTY_STRING;}
+        if(oldFieldValue == null){oldFieldValue = UFHTConstants.EMPTY_STRING;}
+        newFieldValue = (String.isNotBlank(newFieldValue)) ?
+                         newFieldValue.Replace(UFHTConstants.ESCAPED_RETURN + UFHTConstants.ESCAPED_LINE_BREAK, UFHTConstants.ESCAPED_LINE_BREAK).Replace(UFHTConstants.ESCAPED_RETURN, UFHTConstants.ESCAPED_LINE_BREAK) :
+                         newFieldValue;
+
+        oldFieldValue = (String.isNotBlank(oldFieldValue)) ?
+                         oldFieldValue.Replace(UFHTConstants.ESCAPED_RETURN + UFHTConstants.ESCAPED_LINE_BREAK, UFHTConstants.ESCAPED_LINE_BREAK).Replace(UFHTConstants.ESCAPED_RETURN, UFHTConstants.ESCAPED_LINE_BREAK) :
+                         oldFieldValue;
+
+        if( (String.isNotBlank(newFieldValue)
+        && String.isNotBlank(oldFieldValue)
+        && !newFieldValue.equals(oldFieldValue)) || !newFieldValue.equals(oldFieldValue) ) {
+
+            return true;
+        }
+
+        else {
+            return false;
+        }
+    }
+
+    /**
+     * @Author: Eternus Solutions
+     * @Description: Method to create and return Instance of HistoryWrapper Class.
+     * @Param: It takes updated field's old value and new value,record Id,
+     *          ModifiedById, userName, Action as string And ModifiedDate as DateTime.
+     * @Return: It returns HistoryWrapper Class's instance.
+     * @Date: 03/03/2016
+     **/
+    public static UFHT.HistoryWrapper getHistoryWrapperInstance(String selectedField,
+                                                                String oldValue,
+                                                                String newValue,
+                                                                Id recordId,
+                                                                Id modifiedById,
+                                                                DateTime modifiedDate) {
+        UFHT.HistoryWrapper historyWrapperObj;
+        if(String.isBlank(selectedField)
+        || String.isBlank(recordId)
+        || String.isBlank(modifiedById)
+        || modifiedDate == null) {
+            return historyWrapperObj;
+        }
+
+        if(relationshipFieldsSet != null
+        && relationshipFieldsSet.contains(selectedField)) {
+
+            if(idVsRecordNameMap != null) {
+
+                oldValue = (idVsRecordNameMap.containsKey(oldValue)) ? idVsRecordNameMap.get(oldValue) : oldValue;
+                NewValue = (idVsRecordNameMap.containsKey(NewValue)) ? idVsRecordNameMap.get(NewValue) : NewValue;
+                historyWrapperObj = new HistoryWrapper(oldValue,
+                                                       newValue,
+                                                       recordId,
+                                                       modifiedById,
+                                                       modifiedDate);
+            }
+        }
+
+        else {
+
+            historyWrapperObj = new UFHT.HistoryWrapper(oldValue,
+                                                        newValue,
+                                                        recordId,
+                                                        modifiedById,
+                                                        modifiedDate);
+        }
+        return historyWrapperObj;
+    }
+
+    /**
+     * @Author: Eternus Solutions
+     * @Description: Method to get latest updated attachment related to Ultra Track Container records .
+     * @Param: It take the Id list of Ultra Track Container object.
+     * @Return: It returns map of Id and Attachment.
+     * @Date: 03/03/2016
+     **/
+    public map<Id, Attachment> getAttachmentsRelatedToUTC(list<Id> utcIdList) {
+
+       map<Id, Attachment> utcIdVsAttachmentsMap = new map<Id, Attachment>();
+
+       if(utcIdList == null || utcIdList.isEmpty()) {
+            return utcIdVsAttachmentsMap;
+       }
+       if(!UltraTrackUtility.checkObjectAndFieldLevelSecurity('Attachment', 
+                                                               new list<String> {'Id','ParentId','Body', 'BodyLength', 'Name', 'LastModifiedDate'},
+                                                               'isAccessible')){
+             return utcIdVsAttachmentsMap;
+       }
+       for(Attachment attachmentObj : [SELECT Id,
+                                              ParentId,
+                                              Body,
+                                              BodyLength,
+                                              Name
+                                         FROM Attachment
+                                        WHERE ParentId IN : utcIdList
+                                          AND Name like : System.Label.AttachmentFileName + UFHTConstants.PERCENT_SIGN
+                                          AND BodyLength < : UFHTConstants.MAX_BODY_LENGTH
+                                     ORDER BY LastModifiedDate Desc]) {
+
+            if(!attachmentObj.Name.contains(UFHTConstants.END_DATE_PREFIX)) {
+                utcIdVsAttachmentsMap.put(attachmentObj.ParentId, attachmentObj);
+                break;
+            }
+       }
+       return utcIdVsAttachmentsMap;
+    }
+
+    /**
+     * @Author: Eternus Solutions
+     * @Description: Method to find relationship fields and related objects.
+     * @Param: String as object name and list of tracking enabled fields.
+     * @Return: It returns set of relationship field names.
+     * @Date: 11/05/2016
+     **/
+    public static set<String> getRelationshipFields(String objectName, list<String> pSelectedFieldsList) {
+
+        set<String> relationshipFieldNamesSet = new set<String>();
+
+        if(String.isBlank(objectName)
+        || (  pSelectedFieldsList == null
+           || pSelectedFieldsList.isEmpty())) {
+            return relationshipFieldNamesSet;
+        }
+
+        if(UltraTrackUtility.sobjectMap != null
+        && UltraTrackUtility.sobjectMap.containsKey(objectName)) {
+
+            fieldVsFieldSchemaMap = UltraTrackUtility.getFieldType(objectName);
+
+            if(fieldVsFieldSchemaMap == null) {
+                return new set<String>();
+            }
+
+            for(String selectedField : pSelectedFieldsList) {
+
+                if(fieldVsFieldSchemaMap.containsKey(selectedField)
+                && !fieldVsFieldSchemaMap.get(selectedField).getDescribe().getReferenceTo().isEmpty()) {
+                   relationshipFieldNamesSet.add(selectedField);
+               }
+            }
+        }
+        return relationshipFieldNamesSet;
+     }
+
+    /**
+     * @Author: Eternus Solutions
+     * @Description: Method to get Parent ids of relationship fields from trigger.new and trigger.old.
+     * @Param: Set of relationship field names, trigger.newMap, trigger.oldMap.
+     * @Return: It returns set of all parentIds.
+     * @Date: 11/05/2016
+     **/
+    public static set<Id> getAllParentRecordIds(set<String> relationshipFieldsNameSet,
+                                                map<Id, sObject> newRecordsMap,
+                                                map<Id, sObject> oldRecordsMap) {
+
+        set<Id> parentIdsSet = new set<Id>();
+
+        if(relationshipFieldsNameSet == null
+        || relationshipFieldsNameSet.isEmpty()
+        || newRecordsMap == null
+        || oldRecordsMap == null) {
+            return parentIdsSet;
+        }
+
+        for(String relationshipField : relationshipFieldsNameSet) {
+            for (sObject record : newRecordsMap.values()) {
+
+                if(idVsRecordFieldsMap.containsKey(record.Id)
+                && idVsRecordFieldsMap.get(record.Id).contains(relationshipField)
+                && oldRecordsMap.containsKey(record.Id)
+                && record.get(relationshipField) != oldRecordsMap.get(record.Id).get(relationshipField)) {
+
+                    if(String.isNotBlank(String.valueOf(record.get(relationshipField)))) {
+                        parentIdsSet.add(String.valueOf(record.get(relationshipField))); // add new parent id
+                   }
+
+                   if(String.isNotBlank(String.valueOf(oldRecordsMap.get(record.Id).get(relationshipField)))) {
+                        parentIdsSet.add(String.valueOf(oldRecordsMap.get(record.Id).get(relationshipField))); // add old parent id
+                   }
+                }
+            }
+        }
+
+        parentIdsSet.remove(null);
+        return parentIdsSet;
+    }
+
+    /**
+     * @Author: Eternus Solutions
+     * @Description: Method to get the Id Vs recordName to display Lookup field name instead of Id on ViewData page.
+     * @Param: set of parentIds.
+     * @Return: It returns the map of ParentId Vs RecordName.
+     * @Date: 11/05/2016
+     **/
+    public static map<Id, String> getIdVsRecordNameMap(set<Id> pParentIdSet) {
+
+        map<Id, String> recordIdVsNameMap = new map<Id, String>();
+
+        if(pParentIdSet == null
+        || pParentIdSet.isEmpty()) {
+            return recordIdVsNameMap;
+        }
+
+        map<String, String> requiredKeyPrefixMap = new map<String, String>();
+        list<sObject> sObjectList = new list<sObject>();
+
+        String sObjName, fieldName;
+        Id parentId;
+
+        for(String parentIdValue : pParentIdSet) {
+            if(String.isNotBlank(parentIdValue)) {
+                requiredKeyPrefixMap.put(parentIdValue.substring(0, 3), parentIdValue);
+            }
+        }
+
+        for(String parentIdValue : requiredKeyPrefixMap.values()) {
+
+            parentId = parentIdValue;
+            sObjName = parentId.getSObjectType().getDescribe().getName();
+            fieldName = UltraTrackUtility.getNameUniqueField(sObjName);
+            if(!UltraTrackUtility.checkObjectAndFieldLevelSecurity(sObjName, 
+                                                                    new list<String> {UFHTConstants.ID_FIELD ,fieldName},
+                                                                   'isAccessible')){
+                
+                if(!Trigger.isExecuting && ApexPages.CurrentPage() <> null){
+                    UltraTrackUtility.displayMessage(ApexPages.severity.WARNING, UFHTConstants.WHITE_SPACE + System.Label.GenericError);
+                }
+                return recordIdVsNameMap;
+            
+            }   
+            try {
+                sObjectList =  Database.query(UFHTConstants.QUERY_SELECT + UFHTConstants.WHITE_SPACE + UFHTConstants.ID_FIELD 
+                                              + UFHTConstants.COMMA + UFHTConstants.WHITE_SPACE + fieldName + UFHTConstants.WHITE_SPACE + UFHTConstants.QUERY_FROM
+                                              + UFHTConstants.WHITE_SPACE + sObjName + UFHTConstants.WHITE_SPACE + UFHTConstants.QUERY_WHERE
+                                              + UFHTConstants.WHITE_SPACE + UFHTConstants.ID_FIELD + UFHTConstants.WHITE_SPACE
+                                              + UFHTConstants.QUERY_IN + UFHTConstants.COLON + UFHTConstants.WHITE_SPACE
+                                              + UFHTConstants.QUERY_SET_PARENTIDS);
+            }
+
+            catch(QueryException e) {}
+
+            for(sObject sObj : sObjectList) {
+                recordIdVsNameMap.put((Id)sObj.get(UFHTConstants.ID_FIELD), String.valueOf(sObj.get(fieldName)));
+            }
+        }
+
+        return recordIdVsNameMap;
+    }
+    
+    /**
+      * @Author: Eternus Solutions
+      * @Description: Method to verify the recursive call of trigger for an object.
+      * @Param: Name of Object
+      * @Return: It returns true if trigger is already called otherwise false.
+      * @Date: 22/11/2016
+      **/
+    global static Boolean verifyRecursiveCallForAnObject(String objectName) {
+    
+        if(verifyRecursiveCallForAnObjectMap.containsKey(objectName)) {
+           verifyRecursiveCallForAnObjectMap.put(objectName, true);
+        }
+        else {
+            verifyRecursiveCallForAnObjectMap.put(objectName, false);
+        }
+        return (verifyRecursiveCallForAnObjectMap .get(objectName));
+    }
+}

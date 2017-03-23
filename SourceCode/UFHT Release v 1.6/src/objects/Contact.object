@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fields>
+        <fullName>Custom_Geolocation__c</fullName>
+        <label>Custom Geolocation</label>
+        <scale>2</scale>
+        <type>Location</type>
+    </fields>
+    <fields>
+        <fullName>DateTimeField__c</fullName>
+        <label>DateTimeField</label>
+        <trackHistory>true</trackHistory>
+        <type>DateTime</type>
+    </fields>
+    <fields>
+        <fullName>Import2_Id__c</fullName>
+        <description>Id of the record in original system, where it was imported from by Import2.com</description>
+        <externalId>true</externalId>
+        <label>Import2 Id</label>
+        <length>255</length>
+        <type>Text</type>
+        <unique>true</unique>
+    </fields>
+    <fields>
+        <fullName>Languages__c</fullName>
+        <label>Languages</label>
+        <length>100</length>
+        <type>Text</type>
+    </fields>
+    <fields>
+        <fullName>Level__c</fullName>
+        <label>Level</label>
+        <picklist>
+            <picklistValues>
+                <fullName>Secondary</fullName>
+                <default>false</default>
+            </picklistValues>
+            <picklistValues>
+                <fullName>Tertiary</fullName>
+                <default>false</default>
+            </picklistValues>
+            <picklistValues>
+                <fullName>Primary</fullName>
+                <default>false</default>
+            </picklistValues>
+            <sorted>false</sorted>
+        </picklist>
+        <type>Picklist</type>
+    </fields>
+    <fields>
+        <fullName>SSN__c</fullName>
+        <label>SSN</label>
+        <length>9</length>
+        <maskChar>X</maskChar>
+        <maskType>nino</maskType>
+        <trackHistory>true</trackHistory>
+        <type>EncryptedText</type>
+    </fields>
+    <fields>
+        <fullName>TestEncryptedNIN__c</fullName>
+        <label>TestEncryptedNIN</label>
+        <length>10</length>
+        <maskChar>X</maskChar>
+        <maskType>all</maskType>
+        <trackHistory>true</trackHistory>
+        <type>EncryptedText</type>
+    </fields>
+    <fields>
+        <fullName>contact_Test3__c</fullName>
+        <label>contact Test3</label>
+        <length>10</length>
+        <type>Text</type>
+    </fields>
+</CustomObject>

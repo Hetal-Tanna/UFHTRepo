@@ -1,0 +1,612 @@
+<!--
+    * @Page Name: Ultra_Setup
+    * @Description: Designed Visualforce page to setup the object's fields
+    *               for tracking their History. This page shows all updatable objects and
+    *               their updatable fields with checkboxes. User can paginate through the fields.
+    *               Page has functionality to configure the display layout of fields.
+    * ===================================================================================================
+    *       Version   | Date        | Author             | Comments
+    * ---------------------------------------------------------------------------------------------------
+    *       1.0       | 15/11/2015  | Eternus Solutions  | 1. Created page
+    * ===================================================================================================
+    -->
+<apex:page controller="UltraSetupController" docType="html-5.0"
+    standardStylesheets="false" sidebar="false"
+    tabStyle="Setup_Field_History__tab">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" cache="true" />
+
+    <!-- Including Bootstrap CSS Start -->
+    <link href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/css/bootstrap.min.css')}" rel="stylesheet"/>
+    <link href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/font-awesome/css/font-awesome.min.css')}" rel="stylesheet"/>
+    <link href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/css/landing-page1.css')}" rel="stylesheet" />
+    <!-- Including Bootstrap CSS End -->
+
+    <!-- Importing jQuery UI CSS Start (Necessary to be included from CDN) -->
+    <link href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css" rel="stylesheet" />
+    <!-- Importing jQuery UI CSS End -->
+
+    <!-- Including Custom CSS Start -->
+    <link href="{!URLFOR($Resource.Ultra_Css)}" rel="stylesheet" />
+    <!-- Including Custom CSS End -->
+
+    <!-- Including jQuery Start -->
+    <script src="{!URLFOR($Resource.UFHTjQueryResources, '/js/jquery.min.js')}" />
+    <!-- Including jQuery End -->
+
+    <!-- Including Bootstrap JS Start -->
+    <script src="{!URLFOR($Resource.BootStrap, '/bootstrapNew/js/bootstrap.min.js')}" />
+    <!-- Including Bootstrap JS End -->
+
+    <!-- Importing jQuery UI JS Start (Necessary to be included from CDN) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js" />
+    <!-- Importing jQuery UI JS End -->
+
+    <!-- Including connection.js (Provided by SFDC) Start -->
+    <script src="/soap/ajax/26.0/connection.js" />
+    <!-- Including connection.js (Provided by SFDC) End -->
+    <style>
+        .progress-bar.active, .progress.active .progress-bar {
+        -webkit-animation: progress-bar-stripes 2s linear infinite;
+        -o-animation: progress-bar-stripes 2s linear infinite;
+        animation: progress-bar-stripes 2s linear infinite;
+    }
+    .progress-bar-striped, .progress-striped .progress-bar {
+        background-image: -webkit-linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+        background-image: -o-linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+        background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+        -webkit-background-size: 40px 40px;
+        background-size: 40px 40px;
+    }
+    
+    /*.base-checkbox label:before {
+         border: none !important
+    }*/
+     .switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      /*height: 34px;*/
+    }
+    .switch input {display:none;}
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      -webkit-transition: .4s;
+      transition: .4s;
+        height: 26px;
+        width: 50px;
+    }
+    .slider:before {
+     position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 2px;
+        bottom: 3px;
+        background-color: white;
+        -webkit-transition: .4s;
+        transition: .4s;
+    }
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+    input:focus + .slider {
+      box-shadow: 0 0 1px #2196F3;
+    }
+    input:checked + .slider:before {
+      -webkit-transform: translateX(26px);
+      -ms-transform: translateX(26px);
+      transform: translateX(26px);
+    }
+    
+    .slider.round {
+      border-radius: 34px;
+      width: 50px;
+    }
+    .slider.round:before {
+      border-radius: 50%;
+    }
+    </style>
+      
+
+    <div class="bs PageSizeDiv PageSizeDiv-inline">
+        <div class="content-section-a content-section-a-inline">
+            <div class="container">
+                <div class="content content-inline">
+                    <apex:form id="frm" styleClass="frm-inline">
+                        <!-- Header Content Start -->
+                        <div>
+                            <apex:image url="{!URLFOR($Resource.HistoricalDataImage) }"
+                                styleClass="header-image" />
+                            <apex:outputLabel value="{!$Label.Setup_Page_Title}"
+                                styleClass="PageTitleLabelStyle" />
+                            <apex:outputPanel id="panel2">
+                                <apex:outputPanel id="ConfigPanel"
+                                    rendered="{!NOT(isRemoteSiteSettings)}">
+                                    <apex:commandLink id="popupId" oncomplete="showPopup()"
+                                        onclick="hideLabel();" reRender="ConfigPanelDiv"
+                                        styleClass="popup-link" type="image/png"
+                                        title="Configure Layout">
+                                        <i class="fa fa-cog fa-2x cog-gear"></i>
+                                    </apex:commandLink>
+                                </apex:outputPanel>
+                               
+                                <!-- No remote site setting panel Start -->
+                                <apex:outputPanel id="panelRemoteSiteSettingMessage1"
+                                    rendered="{! isRemoteSiteSettings}">
+                                    <div class="RemoteSiteSettingMsg">
+                                        <div class="remoteSiteFont">
+                                            {!$Label.RemoteSiteSettingNotAddedPart1}&nbsp;
+                                            <apex:commandLink value="{!$Label.RemoteSiteSettingNotAddedLinkText}"
+                                                reRender="hidden" onclick="popupRemotesiteSettingPage();" />
+                                            {!$Label.RemoteSiteSettingNotAddedPart2} <span
+                                                class="font-bold">{!$Label.RemoteSiteSettingNotAddedPart3}</span>
+                                            {!$Label.RemoteSiteSettingNotAddedPart4}
+                                        </div>
+                                    </div>
+                                </apex:outputPanel>
+                             </apex:outPutpanel>
+                            <!-- No remote site setting panel End -->
+                        </div>
+                        <!-- Header Content End -->
+                         <!-- Page Messages Start -->
+                        <apex:outputPanel id="checkDeploymentStatus">
+                            <apex:actionPoller action="{!checkTriggerDeploymentStatus}" rendered="{!enablePollar}"
+                                               status="counterStatus"
+                                               reRender="checkDeploymentStatus,MessagePanel1,progressStatus" 
+                                               interval="5"/>
+                            <apex:actionStatus layout="block" id="counterStatus" rendered="{!enablePollar}">
+                                <apex:facet name="start">
+                                    <div id="assign-action-spinner-main">
+                                        <div id="assign-action-spinner-content-Deploy">
+                                            {!$Label.DeploymentWaitingMessage} <br/><br/>
+                                            <div class="progress">
+                                                <div class="progress-bar progress-bar-striped active" 
+                                                     role="progressbar" 
+                                                     aria-valuenow="{!progressCounter}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="50" 
+                                                     style="width:{!progressCounter}%">
+                                                  {!progressCounter}%
+                                                </div>
+                                            </div>
+                                         </div>
+                                     </div>
+                                </apex:facet>
+                                <apex:facet name="stop">
+                                    <div id="assign-action-spinner-main">
+                                        <div id="assign-action-spinner-content-Deploy">
+                                            {!$Label.DeploymentWaitingMessage} <br/><br/>
+                                            <div class="progress">
+                                                <div class="progress-bar progress-bar-striped active" 
+                                                     role="progressbar" 
+                                                     aria-valuenow="{!progressCounter}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="50" 
+                                                     style="width:{!progressCounter}%">
+                                                  {!progressCounter}%
+                                                </div>
+                                            </div>
+                                         </div>
+                                     </div>
+                                </apex:facet>
+                            </apex:actionStatus> 
+                        </apex:outputPanel>
+                        
+                        <apex:outputPanel id="MessagePanel" >
+                            <span class="font-bold"> <apex:pageMessages escape="false" rendered="{!!isHTTPCalloutFail}"/></span>
+                        </apex:outputPanel>
+                        <apex:outputPanel id="MessagePanel1">
+                            <span class="font-bold"> <apex:pageMessages escape="false" rendered="{!!isHTTPCalloutFail}"/></span>
+                        </apex:outputPanel>
+                         <apex:outputPanel id="MessagePane2" >
+                            <span class="font-bold"> <apex:pageMessages escape="false" rendered="{!isHTTPCalloutFail}"/></span>
+                        </apex:outputPanel>
+                        <!-- Page Messages End -->
+                        <apex:actionStatus id="actStatusCounter" layout="block"
+                                    onstop="endLoading();">
+                            <apex:facet name="start">
+                               <apex:outPutPanel rendered="{!enablePollar}">
+                                <div id="assign-action-spinner-main">
+                                        <div id="assign-action-spinner-content-Deploy">
+                                            {!$Label.DeploymentWaitingMessage} <br/>
+                                                <div class="progress">
+                                                    <div class="progress-bar progress-bar-striped active" 
+                                                         role="progressbar" 
+                                                         aria-valuenow="{!progressCounter}" 
+                                                         aria-valuemin="0" 
+                                                         aria-valuemax="50" 
+                                                         style="width:{!progressCounter}%">
+                                                      {!progressCounter}%
+                                                    </div>
+                                                </div>
+                                         </div>
+                                     </div>
+                                    </apex:outPutPanel>
+                                    <apex:outPutPanel rendered="{!!enablePollar}">
+                                     
+                                     <div id="assign-action-spinner-main">
+                                          <div id="assign-action-spinner-content-Deploy">
+                                              {!$Label.DeploymentWaitingMessage} <br/><br/>
+                                          </div>
+                                      </div>
+                                    </apex:outPutPanel>
+                            </apex:facet>
+                        </apex:actionStatus> 
+                         <!-- Loading spinner action status Start -->
+                          <apex:actionStatus id="actStatusId" layout="block"
+                              onstop="endLoading();">
+                              <apex:facet name="start">
+                                  <div id="assign-action-spinner-main">
+                                      <div id="assign-action-spinner-content">
+                                          <img src="/img/analytics/reportbuilder/icons/spinner32.gif"
+                                                 alt="{!$Label.VD_Processing}"
+                                              title="{!$Label.VD_Processing}" />
+                                              <span>{!$Label.VD_Processing}</span>
+                                      </div>
+                                  </div>
+                              </apex:facet>
+                          </apex:actionStatus>  
+                                <!-- Loading spinner action status End -->
+                        <!-- Main Content Start -->
+                        <apex:outputPanel id="panel1">
+                        <apex:pageBlock id="pageblock0" mode="maindetail"
+                               rendered="{!AND(NOT(isRemoteSiteSettings), NOT(isHTTPCalloutFail))}">
+                                <!-- Object selection section Start -->
+                                <div class="panel panel-inline">
+                                    <div class="panel-heading panel-heading-inline">
+                                        <div class="row" style="margin-bottom: -5px; margin-top: -15px;">
+                                            <div class="col-lg-3 col-md-3 col-sm-3">
+                                                <div class="form-group" style="margin-top:7px">
+                                                    <apex:inputText value="{!objects}" id="objectId"
+                                                        onkeypress="return showResult(event);"
+                                                        onkeyup="return showResultkeyup(event)"
+                                                        html-autocomplete="off"
+                                                        StyleClass="form-control required form-control-inline"
+                                                        html-placeholder="{!$Label.ObjectLabel}" >
+                                                    </apex:inputText>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-3 col-md-3 col-sm-3" style="margin-left:270px">
+                                                <div class="form-group small">
+                                                 <div class="owdForObject">
+                                                   <apex:outputPanel id="selectOWD">
+                                                        <apex:outputPanel rendered="{!showOWDPicklistOrNot}">
+                                                            <label class="asterix">Choose an OWD
+                                                            </label>
+                                                            <apex:selectList value="{!selectedOWD}"
+                                                                multiselect="false" size="1" title="Choose an OWD"
+                                                                styleClass="form-control required owdForAnObjectClass"
+                                                                onchange="hideErrorDiv();">
+                                                                <apex:selectOptions value="{!owdForStandardObject}" />
+                                                            </apex:selectList> 
+                                                        </apex:outputPanel>
+                                                     </apex:outputPanel>
+                                                     <div styleClass="width-div-panel">
+                                                        <p id="owdError" class="error-field" style="color:white"></p>
+                                                    </div>
+                                                     </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Object selection section End -->
+                                    <!-- Field display section Start -->
+                                    <apex:outputPanel id="MainOutputPanal" styleClass="outputclass"
+                                        onclick="onSelectAll();">
+                                        <apex:outputPanel rendered="{!isObject}" id="fieldSection">
+                                            <div class="panel-body panel-body-inline">
+                                                <!-- Select / Deselect All Checkbox Start -->
+                                                <div class="select-all-container">
+                                                    <apex:outputlabel value="{!$Label.Ultra_Select_Fields}"
+                                                        styleClass="FieldSectionTitleStyle" />
+                                                    <div
+                                                        class="base-checkbox select-all-checkbox base-checkbox-inline">
+                                                        <div class="check-employee">
+                                                            
+                                                            <apex:outputPanel id="selectDeselectPanelId">
+                                                            <apex:inputCheckbox id="CompleteselectAll"
+                                                                value="{!isAllSelected}"
+                                                                styleClass="checkboxClass selectAllClass"
+                                                                rendered="{!isObject}"
+                                                                title="{!$Label.SelectDeselectAll}">
+                                                                
+                                                                <apex:actionSupport event="onchange"
+                                                                    reRender="resultPanel" action="{!SelectAllCheckboxes}"
+                                                                    status="actStatusId" />
+                                                            </apex:inputCheckbox>
+                                                            <apex:outputlabel value="{!$Label.SelectAll}"
+                                                                rendered="{!AND(isObject,Not(isAllSelected))}"
+                                                                styleClass="SelectAllLabelStyle select-all-checkbox selectDeselectAll" 
+                                                            />
+                                                            <apex:outputlabel value="{!$Label.DeselectAll}"
+                                                                rendered="{!AND(isObject,isAllSelected)}"
+                                                                styleClass="SelectAllLabelStyle select-all-checkbox selectDeselectAll" /> 
+                                                            </apex:outputPanel>   
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- Select / Deselect All Checkbox End -->
+
+                                                <!-- Field list display section Start -->
+                                                <apex:outputPanel id="resultPanel">
+                                                    <div class="field-table-container">
+                                                        <apex:outputPanel rendered="{!isObject}">
+                                                            <table class="table-responsive table-responsive-inline">
+                                                                <!-- Iterating over list of wrapper to display field columns Start -->
+                                                                <apex:repeat value="{!lstWrapperClassList}"
+                                                                    var="wrapperList">
+                                                                    <tr>
+                                                                        <!-- Iterating over list of wrapper to display field rows Start -->
+                                                                        <apex:repeat value="{!wrapperList}" var="wrapper">
+                                                                            <td class="CheckboxColumnStyle">
+                                                                                <div class="base-checkbox">
+                                                                                    <div class="check-employee">
+                                                                                        <!-- Displying actual field Start -->
+                                                                                        <apex:inputCheckbox value="{!wrapper.isSelected}"
+                                                                                            id="inputId" 
+                                                                                            styleClass="checkboxClass-inline checkboxClass selectDeselectAll"
+                                                                                            title="{!$Label.SelectDeselectField}" >
+                                                                                            <apex:actionSupport event="onchange"
+                                                                                                                reRender="selectDeselectPanelId" 
+                                                                                                                action="{!setSelectOrDeselectAll}" />
+                                                                                             </apex:inputCheckbox>                      
+                                                                                        <apex:outputlabel value="{!wrapper.fieldLabel}"
+                                                                                            styleClass="fieldLabel-inline" />
+<!--                                                                                         <input class="switch">  -->
+<!--                                                                                            <input type="checkbox"/>  -->
+<!--                                                                                            <span class="slider round"></span>  -->
+<!--                                                                                         </input> -->
+                                                                                        <span>{!wrapper.fieldApiName}</span>
+                                                                                        <!-- Displying actual field End -->
+                                                                                    </div>
+                                                                                </div>
+                                                                            </td>
+                                                                        </apex:repeat>
+                                                                        <!-- Iterating over list of wrapper to display field rows End -->
+                                                                    </tr>
+                                                                </apex:repeat>
+
+                                                                <!-- Iterating over list of wrapper to display field columns End -->
+                                                            </table>
+                                                        </apex:outputPanel>
+                                                    </div>
+                                                    <div>
+                                                        <!-- Pagination section Start -->
+                                                        <div class="pagination pagination-inline">
+                                                            <div class="page-counter">
+                                                                <!-- Record and page count display Start -->
+                                                                <apex:outputLabel value="Showing {!(pageNumber*pageSize)+1-pageSize} - {!IF((pageNumber*pageSize)>totalSize, totalSize,(pageNumber*pageSize))} of {!totalSize} fields"
+                                                                    styleClass="pagination-label-inline" />
+                                                                <!-- Record and page count display End -->
+                                                            </div>
+                                                            <div class="page-actions">
+                                                                <!-- Pagination buttons Start -->
+                                                                <!-- Please keep the inline style in this section as it fails to apply when added to stylesheet. -->
+                                                                <apex:outputPanel id="navigateButtons">
+                                                                    <!-- First Page Button -->
+                                                                    <apex:commandButton action="{!first}" title="First"
+                                                                        status="actStatusId"
+                                                                        image="{!IF(hasPrevious,URLFOR($Resource.BootStrap,'/bootstrapNew/images/First-arrow-disabled.png'),
+                                                                  URLFOR($Resource.BootStrap,'/bootstrapNew/images/First-arrow.png'))}"
+                                                                        styleclass="first-btn btn btn-default"
+                                                                        style="background-color:#fff !important;border: none;vertical-align: bottom;"
+                                                                        disabled="{!hasPrevious}" reRender="resultPanel"
+                                                                        onComplete="funAutoComplete();" />
+                                                                    <!-- Previous Page Button -->
+                                                                    <apex:commandButton action="{!Previous}"
+                                                                        title="Previous" status="actStatusId"
+                                                                        image="{!IF(hasPrevious,URLFOR($Resource.BootStrap,'/bootstrapNew/images/previous-arrow-disabled.png'),
+                                                                  URLFOR($Resource.BootStrap,'/bootstrapNew/images/previous-arrow.png'))}"
+                                                                        styleclass="previous-btn btn btn-default"
+                                                                        style="background-color:#fff !important;border: none;vertical-align: bottom;"
+                                                                        disabled="{!hasPrevious}" reRender="resultPanel"
+                                                                        onComplete="funAutoComplete()" />
+                                                                    <!-- Next Page Button -->
+                                                                    <apex:commandButton action="{!Next}" title="Next"
+                                                                        status="actStatusId"
+                                                                        image="{!IF(hasNext,URLFOR($Resource.BootStrap,'/bootstrapNew/images/next-arrow-disabled.png'),
+                                                                  URLFOR($Resource.BootStrap,'/bootstrapNew/images/next-arrow.png'))}"
+                                                                        styleclass="next-btn btn btn-default"
+                                                                        style="background-color:#fff !important;border: none;vertical-align: bottom;"
+                                                                        disabled="{!hasNext}" reRender="resultPanel"
+                                                                        onComplete="funAutoComplete();" />
+                                                                    <!-- Last Page Button -->
+                                                                    <apex:commandButton action="{!last}" title="Last"
+                                                                        status="actStatusId"
+                                                                        image="{!IF(hasNext,URLFOR($Resource.BootStrap,'/bootstrapNew/images/latest-arrow-disabled.png'),
+                                                                  URLFOR($Resource.BootStrap,'/bootstrapNew/images/latest-arrow.png'))}"
+                                                                        styleclass="last-btn btn btn-default"
+                                                                        style="background-color:#fff !important;border: none;vertical-align: bottom;"
+                                                                        disabled="{!hasNext}" reRender="resultPanel"
+                                                                        onComplete="funAutoComplete();" />
+                                                                </apex:outputPanel>
+                                                                <!-- Pagination buttons End -->
+                                                            </div>
+                                                        </div>
+                                                        <!-- Pagination section End -->
+                                                    </div>
+                                                    <apex:outputpanel id="buttonSectionID">
+                                                        <div class="final-btns">
+                                                            <!-- Save button Start -->
+                                                            <apex:commandButton id="btnSave"
+                                                                onclick="checkOWDValue(); return false;"
+                                                                Value="Save"
+                                                                Title="Save Setting"
+                                                                status="actStatusCounter"
+                                                                styleclass="btn btn-sm btn-primary SaveSettingButtonStyle save-btn-inline"
+                                                             />
+                                                            <!-- Save button End -->
+                                                        </div>
+                                                    </apex:outputpanel>
+                                                </apex:outputPanel>
+                                                <!-- Field list display section End -->
+                                            </div>
+
+                                        </apex:outputPanel>
+                                    </apex:outputPanel>
+                                    <!-- Field display section End -->
+                                    
+                                </div>
+                                <!-- Configuration popup section Start -->
+                                <div id="dialog" title="Configure Layout"
+                                    class="dialog-container-inline">
+                                    <div class="DialogPanelClass">
+                                        <apex:outputPanel id="dialogP">
+                                            <div class="bs">
+                                                <!-- First Row Start -->
+                                                <div class="row">
+                                                    <div class="col-lg-6 col-md-6 col-sm-6">
+                                                        <!-- Number of columns selection Start -->
+                                                        <div class="form-group small">
+                                                            <label class="asterix">{!$Label.Number_Of_Columns}</label>
+                                                            <apex:selectList value="{!numberOfColumnsPicklistValue}"
+                                                                size="1" styleClass="form-control Columns FontStyle ">
+                                                                <apex:selectOptions value="{!configObj.numberOfColValuesList}" />
+                                                            </apex:selectList>
+                                                        </div>
+                                                        <!-- Number of columns selection End -->
+                                                    </div>
+                                                    <div class="col-lg-6 col-md-6 col-sm-6">
+                                                        <!-- Number of fields per column (row count) selection Start -->
+                                                        <div class="form-group small">
+                                                            <label class="asterix">{!$Label.Number_Of_Fields_Per_Column}</label>
+                                                            <apex:selectList value="{!numberOfFieldsPerColumnsPicklistValue}"
+                                                                size="1" styleClass="form-control Fields FontStyle ">
+                                                                <apex:selectOptions value="{!configObj.numberOfFieldsPerColValuesList}" />
+                                                            </apex:selectList>
+                                                        </div>
+                                                        <!-- Number of fields per column (row count) selection End -->
+                                                    </div>
+                                                </div>
+                                                <!-- First Row End -->
+
+                                                <!-- Second Row Start -->
+                                                <div class="row">
+                                                    <div class="col-lg-6 col-md-6 col-sm-6">
+                                                        <!-- Sort order selection Start -->
+                                                        <div class="form-group small">
+                                                            <label class="asterix asterix-inline">{!$Label.Sort_fields_by_alphabetically}</label>
+                                                            <apex:selectList value="{!sortFieldsValue}" size="1"
+                                                                styleClass="form-control Sort FontStyle ">
+                                                                <apex:selectOptions value="{!configObj.sortFieldsByValuesList}" />
+                                                            </apex:selectList>
+                                                        </div>
+                                                        <!-- Sort order selection End -->
+                                                    </div>
+                                                    <div class="col-lg-6 col-md-6 col-sm-6">
+                                                        <!-- Page size on view history data page Start -->
+                                                        <div class="form-group small">
+                                                            <label class="asterix">{!$Label.NumberOfHistoryRecordsToDisplay}</label>
+                                                            <apex:selectList value="{!numberOfRecordToDisplayPicklistValue}" size="1"
+                                                                styleClass="form-control Records FontStyle">
+                                                                <apex:selectOptions value="{!configObj.numberOfHistoryRecordsToDisplayList}" />
+                                                            </apex:selectList>
+                                                        </div>
+                                                        <!-- Page size on view history data page End -->
+                                                    </div>
+                                                </div>
+                                                <!-- Second Row Start -->
+                                            </div>
+                                            <!-- Save and Cancel Buttons section Start -->
+                                            <table>
+                                                <tr>
+                                                    <td class="final-btns-container-inline">
+                                                        <div class="final-btns">
+                                                            <apex:commandButton value="Save" onClick="hideAndShow();"
+                                                                title="Save" styleClass="btn btn-sm btn-primary"
+                                                                oncomplete="saveConfigurationSetting();" />
+                                                            <apex:commandButton value="Cancel"
+                                                                oncomplete="funSetConfigData();"
+                                                                onClick="closeDialog();" title="Cancel"
+                                                                styleclass="btn btn-sm btn-default" />
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                            <!-- Save and Cancel Buttons section Start -->
+                                        </apex:outputPanel>
+                                    </div>
+                                    <!-- Saving message section -->
+                                    <div align="center">
+                                        <span class="font-bold"> <apex:outputLabel value="{!$Label.Saving}" styleClass="label2" />
+                                        </span>
+                                    </div>
+                                    <!-- Saving message section -->
+                                </div>
+                                <!-- Configuration popup section End -->
+                                <div class="dialog-footer-inline"></div>
+                               
+                            </apex:pageBlock>
+                           </apex:outputPanel>
+                       
+                        <!-- Main Content End -->
+
+                        <!-- Action Funtion to call controller methods when user select object -->
+                        <apex:actionFunction name="getSearchResult"
+                            reRender="MessagePanel, MainOutputPanal,selectOWD" action="{!refresh}"
+                            status="actStatusId" oncomplete="focusOnObject(); hideMessage(); removeTitleMsg();changeSelectAllDeselectAllLabel();" />
+                        
+                        <apex:actionFunction name="getSearchResultForSave"
+                            reRender="MessagePanel, MainOutputPanal, selectOWD" action="{!refresh}"
+                            oncomplete="focusOnObject(); hideMessage(); removeTitleMsg();changeSelectAllDeselectAllLabel();" />
+                            
+                        <!-- Action Funtion to save configuration data in Configuration__c custom setting -->
+                        <apex:actionFunction name="saveAndUpdate" reRender="frm"
+                            oncomplete=" onFormRender();hideDialog();"
+                            action="{!saveAndUpdateConfigurationSetting}">
+
+                            <!-- Configuration data to be sent to controller (URL parameters) -->
+                            <apex:param name="numberOfColumnsPicklistValue" value=""
+                                assignTo="{!numberOfColumnsPicklistValue}" />
+                            <apex:param name="numberOfFieldsPerColumnsPicklistValue" value=""
+                                assignTo="{!numberOfFieldsPerColumnsPicklistValue}" />
+                            <apex:param name="numberOfRecordToDisplayPicklistValue" value=""
+                                assignTo="{!numberOfRecordToDisplayPicklistValue}" />
+                            <apex:param name="sortFieldsValue" value=""
+                                assignTo="{!sortFieldsValue}" />
+                        </apex:actionFunction>
+
+                        <!-- Get existing data from Configuration__c custom setting -->
+                        <apex:actionFunction name="setConfigData" reRender="frm"
+                            oncomplete=" onFormRender();hideDialog();"
+                            action="{!getConfigurationSettingData}" />
+
+                        <!-- Populate triggerable objects to display for autocomplete -->
+                        <apex:actionFunction name="getTriggerableObjList"
+                            action="{!getObjectList}" reRender="Panel1, MessagePanel" />
+                        
+                        <apex:actionfunction name="checkOWDAndSaveTracking" 
+                                             action="{!SelectedFieldsName}" 
+                                             reRender="panel2,checkDeploymentStatus,MessagePanel1,panel1"
+                                             onComplete="getSearchResultForSave(); focusOnObject(); hideDialog(); removeTitleMsg();"
+                                             status="actStatusCounter"
+                        />
+                    </apex:form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        j$ = jQuery.noConflict();
+        function getObjectList() {
+            var apexObjectList = [];
+            <apex:repeat value="{!objList}" var="objectName">
+                apexObjectList.push('{!objectName}');
+            </apex:repeat>
+            return  apexObjectList;
+        }
+        function removeTitleMsg() {
+            j$(".messageText").find("h4").remove();
+        }
+    </script>
+
+    <!-- Including Custom JS Start -->
+    <script src="{!URLFOR($Resource.UFHTjQueryResources, '/js/UltraSetup.js')}" />
+    <!-- Including Custom JS End -->
+</apex:page>

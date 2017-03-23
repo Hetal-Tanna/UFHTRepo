@@ -1,0 +1,487 @@
+/**
+ * @Class Name: ViewDataServiceHandler
+ * @Description: "This handler is used to fetch history records for a selected object,
+ *                data range and logged in user."
+ * =================================================================================================
+ *       Version   | Date        | Author             | Comments
+ * -------------------------------------------------------------------------------------------------
+ *       1.0       | 28/07/2016  | Eternus Solutions  | 1. Created Class for above functionality.
+ * =================================================================================================
+ **/
+public with sharing class ViewDataServiceHandler_QA_Clone {
+
+    /**
+     * @Author: Eternus Solutions
+     * @Description: Method returns json string of history records as per parameters.
+     * @Param: 1. selectedTrackedFieldList: list of tracked fields
+     *         2. ultraTrackWrapperMap: map of Ultra Track wrapper
+     *         3. selectedObject: Name of object for which history records should return.
+     *         4. startDate, endDate: Date range for history records to be fetched
+     *         5. viewUserFilter: to check if logged in user is system admin or not.
+     * @Return:
+     * @Date: 28/07/2016
+     **/
+    public static String getSharedHistoryRecordsForAnObject(list<String> selectedTrackedFieldList,
+                                                            map<String, list<HistoryWrapper>> ultraTrackWrapperMap,
+                                                            String selectedObject,
+                                                            Date startDate,
+                                                            Date endDate,
+                                                            Boolean viewUserFilter,
+                                                            Map<String, String> fieldSeverityMap) {
+        if(String.isBlank(selectedObject) ||
+           selectedTrackedFieldList == null ||
+           selectedTrackedFieldList.isEmpty()) {
+            return null;
+        }
+        list<DisplayHistoryWrapper> displayAllHistoryWrapperList = new list<DisplayHistoryWrapper>();
+        map<Id, String> idVsAccountNameMap = new map<Id, String>();
+        map<Id, Id> idVsOwnerIdMap = new map<Id, Id>();
+        map<String, String> fieldsAndLabelsMap = new map<String, String> ();
+        map<String, String> fieldsAndDataTypeMap = new map<String, String> ();
+        DateTime newDateTime;
+        String datatypeStr = '';
+        map<Id, list<FieldHistoryWrapper>> recordIdVsAllUltraTrackWrapperMap = new map<Id, list<FieldHistoryWrapper>>();
+        map <Id, User> userIdVsUserMap = new map <Id, User>();
+        // Need to call constructor for initializing the variable userIdVsUserMap.
+        new UltraTrackUtility_QA_Clone();  
+        if(UltraTrackUtility_QA_Clone.userIdVsUserMap != null && !UltraTrackUtility_QA_Clone.userIdVsUserMap.isEmpty()) {
+            userIdVsUserMap.putAll(UltraTrackUtility_QA_Clone.userIdVsUserMap);
+        }
+        fieldsAndLabelsMap = UltraTrackUtility_QA_Clone.getFieldNamesAndLabels(selectedObject);
+        fieldsAndDataTypeMap = UltraTrackUtility_QA_Clone.getFieldNamesAndDataType(selectedObject);
+        
+        recordIdVsAllUltraTrackWrapperMap =  getHistoryRecordsFromAttachment(selectedObject,
+                                                                             startDate,
+                                                                             endDate,
+                                                                             selectedTrackedFieldList,
+                                                                             ultraTrackWrapperMap,
+                                                                             fieldsAndLabelsMap) ;
+        if(recordIdVsAllUltraTrackWrapperMap != null &&
+            !recordIdVsAllUltraTrackWrapperMap.isEmpty()) {
+
+                list<sObject> sObjectList = new list<sObject>();
+                set<Id> sObjectIdSet = recordIdVsAllUltraTrackWrapperMap.keySet();
+                String fieldName = UltraTrackUtility_QA_Clone.getNameUniqueField(selectedObject);
+
+                if(String.isNotBlank(fieldName)) {
+                    try {
+                        
+                        //Check whether the user has access for read access for specific object and fields queried
+                        if(!UltraTrackUtility_QA_Clone.checkObjectAndFieldLevelSecurity(selectedObject, 
+                                                                               new list<String> {fieldName},
+                                                                               'isAccessible')){
+                            UltraTrackUtility_QA_Clone.displayMessage(ApexPages.severity.WARNING, UFHTConstants.WHITE_SPACE + System.Label.GenericError);
+                            return null;
+                        
+                        }
+                        sObjectList = Database.query(UFHTConstants.SELECT_FOR_SOBJECT + fieldName + UFHTConstants.WHITE_SPACE + UFHTConstants.QUERY_FROM + UFHTConstants.WHITE_SPACE + selectedObject + UFHTConstants.WHERE_FOR_SOBJECT + UFHTConstants.ORDER_BY_FOR_SOBJECT + fieldName);
+                    }
+                    catch(QueryException e) {}
+                }
+                else {
+                    return null;
+                }
+                if(!sObjectList.isEmpty()) {
+                    for(sObject sObj : sObjectList) {
+                        idVsAccountNameMap.put((Id)sObj.get(UFHTConstants.ID_FIELD), (String)sObj.get(fieldName));
+                        idVsOwnerIdMap.put((Id)sObj.get(UFHTConstants.ID_FIELD), (Id)sObj.get(UFHTConstants.LAST_MODIFIED_BY_FIELD));
+                    }
+                    idVsAccountNameMap.remove(null);
+                    
+                    for(Id recordId : recordIdVsAllUltraTrackWrapperMap.keySet()) {
+                        for(FieldHistoryWrapper fieldAndHistoryObj : recordIdVsAllUltraTrackWrapperMap.get(recordId)) {
+                            newDateTime = getDateTimeForUserTimeZone(fieldAndHistoryObj.historyWrapperObject.ModifiedDateTime);
+                            if(idVsAccountNameMap.containsKey(Id.valueOf(fieldAndHistoryObj.historyWrapperObject.parentId))) {
+                                // replacing double/Integer by Number
+                                // replacing EncrpytedString by Text(Encrypted)
+                                // replacing Double by Geolocation
+                                // replacing reference by Lookup/Master-detail To avoid confusion of end user
+                                datatypeStr = fieldsAndDataTypeMap.get(fieldAndHistoryObj.fieldName);
+                                system.debug('%% datatypeStr'+datatypeStr);
+                                /*if(UltraTrackUtility_QA_Clone.dataTypesMap.containsKey(fieldsAndDataTypeMap.get(fieldAndHistoryObj.fieldName))) {
+                                    datatypeStr = UltraTrackUtility_QA_Clone.dataTypesMap.get(fieldsAndDataTypeMap.get(fieldAndHistoryObj.fieldName));
+                                }*/
+                                
+                                displayAllHistoryWrapperList.add(new DisplayHistoryWrapper(fieldAndHistoryObj.historyWrapperObject.parentId,
+                                                                                             idVsAccountNameMap.get(Id.valueOf(fieldAndHistoryObj.historyWrapperObject.parentId)),
+                                                                                             newDateTime.format(),
+                                                                                             newDateTime.format(UFHTConstants.DATEFORMAT1),
+                                                                                             userIdVsUserMap.get(fieldAndHistoryObj.historyWrapperObject.ModifiedById).Name,
+                                                                                             fieldAndHistoryObj.historyWrapperObject.ModifiedById,
+                                                                                             fieldAndHistoryObj.fieldLabel,
+                                                                                             fieldAndHistoryObj.fieldName,
+                                                                                             fieldAndHistoryObj.historyWrapperObject.oldValue,
+                                                                                             fieldAndHistoryObj.historyWrapperObject.newValue,
+                                                                                             UltraTrackUtility_QA_Clone.convertFieldToTitleCase(datatypeStr),
+                                                                                             fieldSeverityMap.get(fieldAndHistoryObj.fieldName)));
+                            }
+                        }
+                    }
+               }
+        }
+        
+        if(!displayAllHistoryWrapperList.isEmpty()) {
+            return (getHistoryRecordsAsPerUser(selectedObject,
+                                                    viewUserFilter,
+                                                    displayAllHistoryWrapperList,
+                                                    idVsAccountNameMap,
+                                                    idVsOwnerIdMap
+                                                  ));
+        }
+         return null;
+     }
+
+     /**
+       * @Author: Eternus Solutions
+       * @Description: Method to retrieve history records in specified date range.
+       * @Param: 1. selectedObject: Name of object for which history records should return.
+       *          2. startDate, endDate: Date range for history records to be fetched.
+       *          3. selectedTrackedFieldList: List of tracked fields.
+       *          4. ultraTrackWrapperMap: map of Ultrac Track wrapper
+       *          5. fieldsAndLabelsMap: Map of all fields name Vs field label.
+       * @Return: map<Id, list<FieldHistoryWrapper>>
+       * @Date: 18/07/2016
+       **/
+     public static map<Id, list<FieldHistoryWrapper>> getHistoryRecordsFromAttachment(String selectedObject,
+                                                                                      Date startDate,
+                                                                                      Date endDate,
+                                                                                      list<String> selectedTrackedFieldList,
+                                                                                      map<String, list<HistoryWrapper>> ultraTrackWrapperMap,
+                                                                                      map<String, String> fieldsAndLabelsMap) {
+        map<Id, list<FieldHistoryWrapper>> recordIdVsAllUltraTrackWrapperMap = new map<Id, list<FieldHistoryWrapper>>();
+        if(String.isBlank(selectedObject) ||
+           selectedTrackedFieldList == null ||
+           ultraTrackWrapperMap == null ||
+           selectedTrackedFieldList.isEmpty() ||
+           ultraTrackWrapperMap.isEmpty() ||
+           fieldsAndLabelsMap == null ||
+           fieldsAndLabelsMap.isEmpty()) {
+           return recordIdVsAllUltraTrackWrapperMap;
+        }
+        String fieldLabel;
+        Date modifiedOnDate;
+        DateTime newDateTime;
+        list<HistoryWrapper> historyWrapperList = new list<HistoryWrapper>();
+        Schema.DisplayType fieldType;
+        for(String fieldName : selectedTrackedFieldList) {
+            if(ultraTrackWrapperMap.containsKey(fieldName)) {
+                historyWrapperList = ultraTrackWrapperMap.get(fieldName);
+                if(fieldsAndLabelsMap.containsKey(fieldName)) {
+                    fieldLabel = fieldsAndLabelsMap.get(fieldName);
+                }
+                 
+                fieldType = UltraTrackUtility_QA_Clone.getFieldType(selectedObject, fieldName);
+                if(historyWrapperList != null &&
+                    !historyWrapperList.isEmpty()) {
+                    historyWrapperList.sort();
+                    for(HistoryWrapper objWrapper : historyWrapperList) {
+                        newDateTime = getDateTimeForUserTimeZone(objWrapper.ModifiedDateTime);
+
+                        if(newDateTime != null && newDateTime.format().contains(UFHTConstants.COMMA))  {
+                            modifiedOnDate = Date.parse(newDateTime.format().split(UFHTConstants.COMMA)[0]);
+                        }
+                        else {
+                             modifiedOnDate = Date.parse(newDateTime.format().split(UFHTConstants.WHITE_SPACE)[0]);
+                        }
+
+                        if(fieldType != null && (fieldType == Schema.DisplayType.Date ||
+                                                fieldType == Schema.DisplayType.DateTime)) {
+
+                                        objWrapper.oldValue =
+                                            getFormattedDateFieldValue(objWrapper.oldValue, fieldType);
+                                        objWrapper.newValue =
+                                            getFormattedDateFieldValue(objWrapper.newValue, fieldType);
+                        }
+                        if(recordIdVsAllUltraTrackWrapperMap.containsKey(objWrapper.parentId)) {
+                            if (startDate != null || endDate != null) {
+                                if(checkStartEndDateRange(modifiedOnDate, startDate, endDate)) {
+                                   
+                                    recordIdVsAllUltraTrackWrapperMap.get(objWrapper.parentId).add(new FieldHistoryWrapper(fieldName, fieldLabel, objWrapper));
+                                }
+                            }
+                            else {
+                                recordIdVsAllUltraTrackWrapperMap.get(objWrapper.parentId).add(new FieldHistoryWrapper(fieldName, fieldLabel, objWrapper));
+                            }
+                        }
+                        else{
+                            if((startDate != null || endDate != null)) {
+                                if(checkStartEndDateRange(modifiedOnDate, startDate, endDate)) {
+                                    recordIdVsAllUltraTrackWrapperMap.put(objWrapper.parentId,
+                                                           new list<FieldHistoryWrapper> {new FieldHistoryWrapper(fieldName, fieldLabel, objWrapper)});
+                                }
+                            }
+                            else {
+                                recordIdVsAllUltraTrackWrapperMap.put(objWrapper.parentId,
+                                                            new list<FieldHistoryWrapper> {new FieldHistoryWrapper(fieldName, fieldLabel, objWrapper)});
+                            }
+
+                        }
+                    }
+                }
+            }
+        }
+        return  recordIdVsAllUltraTrackWrapperMap;
+     }
+     /**
+      * @Author: Eternus Solutions
+      * @Description:  Method to format date / date-time value.
+      * @Param: 1. fieldValue: value of the field
+      *         2. fieldType: Schema of DisplayType
+      * @Return: String value for DateTime or Date.
+      * @Date: 26/05/2016
+      */
+    public static String getFormattedDateFieldValue(String fieldValue, Schema.DisplayType fieldType) {
+
+        if(String.isBlank(fieldValue)) {
+            return null;
+        }
+        DateTime temp_DateTimeInstance = getDateTimeForUserTimeZone(fieldValue);
+        String formattedDate;
+        if (temp_DateTimeInstance != null) {
+           if(fieldType == Schema.DisplayType.Date) {
+                formattedDate = temp_DateTimeInstance.date().format();
+            }
+            else if(fieldType == Schema.DisplayType.DateTime) {
+                formattedDate = temp_DateTimeInstance.format() ;
+            }
+        }
+        return formattedDate;
+    }
+
+   /**
+     * @Author: Eternus Solutions
+     * @Description: Method returns json string of history records as per parameters.
+     * @Param: selectedObject: Id of Ultra Track Container object.
+     *         viewUserFilter: to check if logged in user is system admin or not.
+     *         displayAllHistoryWrapperList: list of all history records
+     *         idVsAccountNameMap: map of record Id Vs record name
+     *         idVsOwnerIdMap: map of record Id Vs record owner Id
+     * @Return: Json string
+     * @Date: 28/07/2016
+     **/
+     public static String getHistoryRecordsAsPerUser(String selectedObject,
+                                                     Boolean viewUserFilter,
+                                                     list<DisplayHistoryWrapper> displayAllHistoryWrapperList,
+                                                     map<Id, String> idVsAccountNameMap,
+                                                     map<Id, Id> idVsOwnerIdMap
+                                                    ) {
+        String JsonResult;
+        
+        if(String.isBlank(selectedObject) ||
+           displayAllHistoryWrapperList == null ||
+           displayAllHistoryWrapperList.isEmpty() ||
+           idVsAccountNameMap == null ||
+           idVsAccountNameMap.isEmpty() ||
+           idVsOwnerIdMap == null ||
+           idVsOwnerIdMap.isEmpty()) {
+            return JsonResult;
+        }
+        list<DisplayHistoryWrapper> filterHistoryWrapperList = new list<DisplayHistoryWrapper>();
+        map <Id, set<Id>> recordIdVsUserOrGroupIdSetMap = new map <Id, set<Id>>();
+        map<Id, set<Id>> userIdVsAllManagerIdMap = new map<Id, set<Id>>();
+        if(viewUserFilter) {
+            filterHistoryWrapperList.addAll(displayAllHistoryWrapperList);
+        }
+        else if(!displayAllHistoryWrapperList.isEmpty()) {
+           
+            String objectOwd, objectAccess;
+            objectOwd = '';
+            sObject organizationObj;
+            map<String, String> owdVsAccessMap = new map<String, String> {UFHTConstants.EDIT => UFHTConstants.EDIT,
+                                                                          UFHTConstants.NONE => UFHTConstants.PRIVATE_KEYWORD,
+                                                                          UFHTConstants.DEFAULT_ACCESS => UFHTConstants.READ
+                                                                          };
+            map<Boolean, list<String>> owdForAnObjectMap = UltraTrackUtility_QA_Clone.getOwdForAnObject(selectedObject);
+            if(owdForAnObjectMap != null && !owdForAnObjectMap.isEmpty() && owdForAnObjectMap.containsKey(true)) {
+                recordIdVsUserOrGroupIdSetMap = UltraTrackUtility_QA_Clone.getSharing(owdForAnObjectMap.get(true), idVsAccountNameMap.keySet());
+
+                if(owdForAnObjectMap.get(true).size() > 1 &&
+                   owdForAnObjectMap.get(true)[2] != null &&
+                   owdForAnObjectMap.get(true)[2] == UFHTConstants.FALSE_KEYWORD) {
+
+                    if(Standard_Objects__c.getValues(selectedObject) != null) {
+                        if(!UltraTrackUtility_QA_Clone.isAllowDMLForCustomSetting('UFHT__Standard_Objects__c','isAccessible')){
+                            UltraTrackUtility_QA_Clone.displayMessage(ApexPages.Severity.ERROR, System.Label.GenericError);
+                            return JsonResult;
+                        }
+                        String organiztionFieldName = Standard_Objects__c.getValues(selectedObject).Organization_Field_Name__c;
+                        if(String.isNotBlank(organiztionFieldName)) {
+                            String queryString = UFHTConstants.SELECT_FOR_ORGNIZATION;
+                            if(selectedObject.contains(UFHTConstants.CONTACT_STRING)) {
+                                queryString += UFHTConstants.DEFAULT_ACCOUNT_ACCESS + UFHTConstants.COMMA_WITH_SPACE + organiztionFieldName + UFHTConstants.WHITE_SPACE + UFHTConstants.ORGANIZATION ;
+                            }
+                            else {
+                                queryString += organiztionFieldName + UFHTConstants.WHITE_SPACE + UFHTConstants.ORGANIZATION ;
+                            }
+                            try {
+                                //Check whether the user has access for organization and its respective fields
+                                if(!UltraTrackUtility_QA_Clone.checkObjectAndFieldLevelSecurity('Organization', 
+                                                                                       new list<String> {organiztionFieldName},
+                                                                                       'isAccessible')){
+                                    //UltraTrackUtility_QA_Clone.displayMessage(ApexPages.severity.WARNING, UFHTConstants.WHITE_SPACE + System.Label.GenericError);
+                                    //return JsonResult;
+                                     list<Ultra_Track_Container__c> containerList = [SELECT Id, 
+                                                                                            OWD_for_an_Object__c
+                                                                                     FROM Ultra_Track_Container__c
+                                                                                     WHERE Object_Name__c = :selectedObject
+                                                                                    ];  
+                                  if(containerList != null  && !containerList.isEmpty()) {
+                                      objectAccess = String.isBlank(containerList[0].OWD_for_an_Object__c) ?
+                                                     UFHTConstants.DEFAULT_ACCESS :
+                                                     containerList[0].OWD_for_an_Object__c.containsIgnoreCase(UFHTConstants.PRIVATE_KEYWORD) ?
+                                                     UFHTConstants.NONE : 
+                                                     containerList[0].OWD_for_an_Object__c.containsIgnoreCase(UFHTConstants.EDIT) ?
+                                                     UFHTConstants.EDIT : 
+                                                     containerList[0].OWD_for_an_Object__c.containsIgnoreCase(UFHTConstants.READ) ?
+                                                     UFHTConstants.DEFAULT_ACCESS :
+                                                     '';
+                                  }
+                                }
+                                else {
+                                    organizationObj = Database.query(queryString);
+                                }
+                            }
+                            catch(QueryException e) {
+                            }
+
+                            if(organizationObj != null) {
+                                objectAccess = (String) organizationObj.get(organiztionFieldName);
+                            }
+                        }
+
+                        if(organizationObj != null && String.isNotBlank(objectAccess) &&
+                            objectAccess.containsIgnoreCase(UFHTConstants.CONTROLLED_BY_PARENT)) {
+
+                            objectOwd = (String) organizationObj.get(UFHTConstants.DEFAULT_ACCOUNT_ACCESS);
+                            if(String.isNotBlank(objectOwd) && objectOwd.containsIgnoreCase(UFHTConstants.EDIT)) {
+                               objectOwd = owdVsAccessMap.get(UFHTConstants.EDIT);
+                            }
+                            else if(objectOwd.contains(UFHTConstants.NONE)) {
+                               objectOwd = owdVsAccessMap.get(UFHTConstants.NONE);
+                            }
+                            else {
+                               objectOwd = owdVsAccessMap.get(UFHTConstants.DEFAULT_ACCESS);
+                            }
+                        }
+                        else if(objectAccess.contains(UFHTConstants.EDIT) || objectAccess.contains(UFHTConstants.ALL)) {
+                            objectOwd = owdVsAccessMap.get(UFHTConstants.EDIT);
+                        }
+                        else if(objectAccess.contains(UFHTConstants.NONE)) {
+                            objectOwd = owdVsAccessMap.get(UFHTConstants.NONE);
+                        }
+                        else {
+                            objectOwd = owdVsAccessMap.get(UFHTConstants.DEFAULT_ACCESS);
+                        }
+                    }
+                }
+                if(owdForAnObjectMap.containsKey(true) && owdForAnObjectMap.get(true).size() <= 3
+                    && owdForAnObjectMap.get(true)[2] != null &&
+                    owdForAnObjectMap.get(true)[2] == UFHTConstants.TRUE_KEYWORD ||
+                    (objectOwd.contains(UFHTConstants.PRIVATE_KEYWORD) &&
+                    UltraTrackUtility_QA_Clone.sobjectMap.get(selectedObject).getDescribe().isAccessible())) {
+
+                    set<Id> ownerIdSet = new set<Id> (idVsOwnerIdMap.values());
+                    userIdVsAllManagerIdMap = new UltraTrackUtility_QA_Clone().getAllManagersForUser(ownerIdSet);
+
+                    if(userIdVsAllManagerIdMap != null && !userIdVsAllManagerIdMap.isEmpty()) {
+                        for(Id recordId : idVsOwnerIdMap.keySet()) {
+                            if(recordIdVsUserOrGroupIdSetMap.containsKey(recordId)) {
+                                recordIdVsUserOrGroupIdSetMap.get(recordId).addAll(userIdVsAllManagerIdMap.get(idVsOwnerIdMap.get(recordId)));
+                            }
+                            else {
+                                recordIdVsUserOrGroupIdSetMap.put(recordId, userIdVsAllManagerIdMap.get(idVsOwnerIdMap.get(recordId)));
+                            }
+                        }
+                    }
+                    for(DisplayHistoryWrapper wrapperObj : displayAllHistoryWrapperList) {
+                        if(UserInfo.getUserId() == idVsOwnerIdMap.get(wrapperObj.parentId)) {
+                            filterHistoryWrapperList.add(wrapperObj);
+                        }
+                        else if(recordIdVsUserOrGroupIdSetMap.get(wrapperObj.parentId) != null &&
+                                recordIdVsUserOrGroupIdSetMap.get(wrapperObj.parentId).contains(UserInfo.getUserId())) {
+                            filterHistoryWrapperList.add(wrapperObj);
+                        }
+                    }
+
+                }
+            }
+            if((owdForAnObjectMap.containsKey(false) && owdForAnObjectMap.get(false)[0] == UFHTConstants.TRUE_KEYWORD ) ||
+               ((objectOwd.contains(UFHTConstants.EDIT) ||  objectOwd.contains(UFHTConstants.READ)) &&
+                UltraTrackUtility_QA_Clone.sobjectMap.get(selectedObject).getDescribe().isAccessible())) {
+                    for (DisplayHistoryWrapper wrapperObj : displayAllHistoryWrapperList) {
+                        filterHistoryWrapperList.add(wrapperObj);
+                    }
+            }
+
+        }
+        
+        if(!filterHistoryWrapperList.isEmpty()) {
+            JsonResult = JSON.serialize(filterHistoryWrapperList);
+        }
+        return JsonResult;
+    }
+
+  /**
+    * @Author: Eternus Solutions
+    * @Description:  Method to get datetime for passed string in user timezone.
+    * @Param: dateTimeString: Date time value in string format
+    * @Return: DateTime.
+    * @Date: 26/05/2016
+    **/
+    public static DateTime getDateTimeForUserTimeZone(String dateTimeString) {
+
+        DateTime newDateTime;
+        if(String.isBlank(dateTimeString)) {
+            return newDateTime;
+        }
+        list<String> spiltStrList = dateTimeString.split(UFHTConstants.WHITE_SPACE);
+        if(spiltStrList.size() >= 2) {
+            list<String> dateComponentsList = spiltStrList[0].contains(UFHTConstants.DATE_SEPARATOR_SLASH) ? spiltStrList[0].split(UFHTConstants.DATE_SEPARATOR_SLASH) : spiltStrList[0].split('-');
+            list<String> timeComponentsList = spiltStrList[1].split(UFHTConstants.COLON);
+
+            if(spiltStrList[0].contains(UFHTConstants.DATE_SEPARATOR_SLASH)) {
+                newDateTime = DateTime.newInstanceGmt(Integer.valueOf(dateComponentsList[2]),
+                                                   Integer.valueOf(dateComponentsList[0]),
+                                                   Integer.valueOf(dateComponentsList[1]),
+                                                   Integer.valueOf(timeComponentsList[0]),
+                                                   Integer.valueOf(timeComponentsList[1]),
+                                                   0);
+            } 
+            else if(spiltStrList[0].contains('-')) {
+                newDateTime = DateTime.newInstanceGmt(Integer.valueOf(dateComponentsList[0]),
+                                                   Integer.valueOf(dateComponentsList[1]),
+                                                   Integer.valueOf(dateComponentsList[2]),
+                                                   Integer.valueOf(timeComponentsList[0]),
+                                                   Integer.valueOf(timeComponentsList[1]),
+                                                   0);
+            }
+            return newDateTime;
+        }
+        return newDateTime;
+    }
+
+  /**
+    * @Author: Eternus Solutions
+    * @Description: Method to check modified date of record is in range or not.
+    * @Param: 1. modifiedDateTime: Last modified date of record
+    *         2. startDate: Start of date range
+              3. endDate: End of date range
+    * @Return: Boolean
+    * @Date: 15/11/2015
+    */
+    @TestVisible private static boolean checkStartEndDateRange(Date modifiedDate,
+                                                               Date startDate,
+                                                               Date endDate) {
+        Boolean flag = false;
+        if(modifiedDate != null &&
+          
+          ((startDate != null && endDate != null && modifiedDate >= startDate && modifiedDate <= endDate) ||
+           (startDate != null && endDate == null && modifiedDate >= startDate) || 
+           (startDate == null && endDate != null && modifiedDate <= endDate)) ) {
+
+                   flag = true;
+            
+        }
+        return flag;
+    }
+}

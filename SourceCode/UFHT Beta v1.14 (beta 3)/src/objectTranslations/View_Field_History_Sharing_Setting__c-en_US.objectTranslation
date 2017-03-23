@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <caseValues>
+        <plural>false</plural>
+        <value>View Field History Sharing Setting</value>
+    </caseValues>
+    <caseValues>
+        <plural>true</plural>
+        <value>View Field History Sharing Setting</value>
+    </caseValues>
+    <fields>
+        <label><!-- View All Data --></label>
+        <name>View_All_Data__c</name>
+    </fields>
+    <startsWith>Consonant</startsWith>
+</CustomObjectTranslation>

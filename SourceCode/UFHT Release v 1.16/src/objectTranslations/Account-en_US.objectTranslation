@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fields>
+        <caseValues>
+            <plural>false</plural>
+            <value>Name</value>
+        </caseValues>
+        <caseValues>
+            <plural>true</plural>
+            <value>Account Names</value>
+        </caseValues>
+        <name>account_name</name>
+        <startsWith>Vowel</startsWith>
+    </fields>
+    <fields>
+        <label><!-- Active --></label>
+        <name>Active__c</name>
+        <picklistValues>
+            <masterLabel>No</masterLabel>
+            <translation><!-- No --></translation>
+        </picklistValues>
+        <picklistValues>
+            <masterLabel>Yes</masterLabel>
+            <translation><!-- Yes --></translation>
+        </picklistValues>
+    </fields>
+    <fields>
+        <label><!-- Campaign --></label>
+        <name>Campaign__c</name>
+        <relationshipLabel><!-- Accounts --></relationshipLabel>
+    </fields>
+    <fields>
+        <label><!-- Child Count --></label>
+        <name>Child_Count__c</name>
+    </fields>
+    <fields>
+        <label><!-- Customer Priority --></label>
+        <name>CustomerPriority__c</name>
+        <picklistValues>
+            <masterLabel>High</masterLabel>
+            <translation><!-- High --></translation>
+        </picklistValues>
+        <picklistValues>
+            <masterLabel>Low</masterLabel>
+            <translation><!-- Low --></translation>
+        </picklistValues>
+        <picklistValues>
+            <masterLabel>Medium</masterLabel>
+            <translation><!-- Medium --></translation>
+        </picklistValues>
+    </fields>
+    <fields>
+        <label><!-- DateTime1 --></label>
+        <name>DateTime1__c</name>
+    </fields>
+    <fields>
+        <label><!-- DateTime2 --></label>
+        <name>DateTime2__c</name>
+    </fields>
+    <fields>
+        <label><!-- DateTime3 --></label>
+        <name>DateTime3__c</name>
+    </fields>
+    <fields>
+        <label><!-- DateTime4 --></label>
+        <name>DateTime4__c</name>
+    </fields>
+    <fields>
+        <label><!-- DateTime5 --></label>
+        <name>DateTime5__c</name>
+    </fields>
+    <fields>
+        <label><!-- Import2 Id --></label>
+        <name>Import2_Id__c</name>
+    </fields>
+    <fields>
+        <label><!-- LongText1 --></label>
+        <name>LongText1__c</name>
+    </fields>
+    <fields>
+        <label><!-- LongText2 --></label>
+        <name>LongText2__c</name>
+    </fields>
+    <fields>
+        <label><!-- LongText3 --></label>
+        <name>LongText3__c</name>
+    </fields>
+    <fields>
+        <label><!-- LongText4 --></label>
+        <name>LongText4__c</name>
+    </fields>
+    <fields>
+        <label><!-- LongText5 --></label>
+        <name>LongText5__c</name>
+    </fields>
+    <fields>
+        <label><!-- Name --></label>
+        <name>Name1__c</name>
+    </fields>
+    <fields>
+        <label><!-- Name --></label>
+        <name>Name2__c</name>
+    </fields>
+    <fields>
+        <label><!-- Name --></label>
+        <name>Name__c</name>
+    </fields>
+    <fields>
+        <label><!-- Number of Locations --></label>
+        <name>NumberofLocations__c</name>
+    </fields>
+    <fields>
+        <label><!-- SLA Expiration Date --></label>
+        <name>SLAExpirationDate__c</name>
+    </fields>
+    <fields>
+        <label><!-- SLA Serial Number --></label>
+        <name>SLASerialNumber__c</name>
+    </fields>
+    <fields>
+        <label><!-- SLA --></label>
+        <name>SLA__c</name>
+        <picklistValues>
+            <masterLabel>Bronze</masterLabel>
+            <translation><!-- Bronze --></translation>
+        </picklistValues>
+        <picklistValues>
+            <masterLabel>Gold</masterLabel>
+            <translation><!-- Gold --></translation>
+        </picklistValues>
+        <picklistValues>
+            <masterLabel>Platinum</masterLabel>
+            <translation><!-- Platinum --></translation>
+        </picklistValues>
+        <picklistValues>
+            <masterLabel>Silver</masterLabel>
+            <translation><!-- Silver --></translation>
+        </picklistValues>
+    </fields>
+    <fields>
+        <label><!-- TestAutoNumber --></label>
+        <name>TestAutoNumber__c</name>
+    </fields>
+    <fields>
+        <label><!-- TestEncriptedField --></label>
+        <name>TestEncriptedField__c</name>
+    </fields>
+    <fields>
+        <label><!-- TestFormulaString --></label>
+        <name>TestFormulaString__c</name>
+    </fields>
+    <fields>
+        <label><!-- TestGeoLocation --></label>
+        <name>TestGeoLocation__c</name>
+    </fields>
+    <fields>
+        <label><!-- TestRTA1 --></label>
+        <name>TestRTA1__c</name>
+    </fields>
+    <fields>
+        <label><!-- TestRTA2 --></label>
+        <name>TestRTA2__c</name>
+    </fields>
+    <fields>
+        <label><!-- TestRTA3 --></label>
+        <name>TestRTA3__c</name>
+    </fields>
+    <fields>
+        <label><!-- TestRTA4 --></label>
+        <name>TestRTA4__c</name>
+    </fields>
+    <fields>
+        <label><!-- TestRTA5 --></label>
+        <name>TestRTA5__c</name>
+    </fields>
+    <fields>
+        <label><!-- TextArea1 --></label>
+        <name>TextArea1__c</name>
+    </fields>
+    <fields>
+        <label><!-- TextArea2 --></label>
+        <name>TextArea2__c</name>
+    </fields>
+    <fields>
+        <label><!-- TextArea3 --></label>
+        <name>TextArea3__c</name>
+    </fields>
+    <fields>
+        <label><!-- TextArea4 --></label>
+        <name>TextArea4__c</name>
+    </fields>
+    <fields>
+        <label><!-- TextArea5 --></label>
+        <name>TextArea5__c</name>
+    </fields>
+    <fields>
+        <label><!-- TextField1 --></label>
+        <name>TextField1__c</name>
+    </fields>
+    <fields>
+        <label><!-- TextField2 --></label>
+        <name>TextField2__c</name>
+    </fields>
+    <fields>
+        <label><!-- TextField3 --></label>
+        <name>TextField3__c</name>
+    </fields>
+    <fields>
+        <label><!-- TextField4 --></label>
+        <name>TextField4__c</name>
+    </fields>
+    <fields>
+        <label><!-- TextField5 --></label>
+        <name>TextField5__c</name>
+    </fields>
+    <fields>
+        <label><!-- Last Time Updated Upsell Opportunity --></label>
+        <name>UpsellOpportunity__c</name>
+        <picklistValues>
+            <masterLabel>Maybe</masterLabel>
+            <translation><!-- Maybe --></translation>
+        </picklistValues>
+        <picklistValues>
+            <masterLabel>No</masterLabel>
+            <translation><!-- No --></translation>
+        </picklistValues>
+        <picklistValues>
+            <masterLabel>Yes</masterLabel>
+            <translation><!-- Yes --></translation>
+        </picklistValues>
+    </fields>
+    <fields>
+        <label><!-- Zcat --></label>
+        <name>Zcat__c</name>
+    </fields>
+    <layouts>
+        <layout>Account Layout</layout>
+        <sections>
+            <label><!-- Custom Links --></label>
+            <section>Custom Links</section>
+        </sections>
+        <sections>
+            <label><!-- History Records --></label>
+            <section>History Records</section>
+        </sections>
+    </layouts>
+    <layouts>
+        <layout>Mini page laout</layout>
+        <sections>
+            <label><!-- Custom Links --></label>
+            <section>Custom Links</section>
+        </sections>
+    </layouts>
+    <validationRules>
+        <errorMessage><!-- Validation error occured --></errorMessage>
+        <name>Sample</name>
+    </validationRules>
+    <webLinks>
+        <label><!-- Billing --></label>
+        <name>Billing</name>
+    </webLinks>
+</CustomObjectTranslation>

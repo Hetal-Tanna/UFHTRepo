@@ -1,0 +1,904 @@
+<apex:component controller="ViewDataController" 
+    extensions="DataProviderForViewData" id="viewFH"
+    access="global" > 
+    
+    <!-- Start of Component Attributes -->
+    
+     <apex:attribute name="recId" type="String" required="false" description="test attribute"
+                     assignTo="{!recordId}" access="global"  />
+     <apex:attribute name="inlineMode" type="Boolean" required="false" 
+                     description="flag to check if compoent is in inline page"
+                     assignTo="{!isRelatedList}" access="global" />
+     <apex:attribute name="objName" type="String" required="false" description="test attribute"
+                     assignTo="{!parentObjName}" access="global"  />
+    <!-- End of Component Attributes -->
+    <!-- Css for Jquery, Bootstrap and AngularJs -->
+        <link rel="stylesheet"
+            href="https://code.jquery.com/ui/1.9.1/themes/base/jquery-ui.css" />
+        <link
+            href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/css/bootstrap.min.css')}"
+            rel="stylesheet" />
+        <link
+            href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/css/landing-page1.css')}"
+            rel="stylesheet" />
+        <link
+            href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/css/bootstrap-datepicker.css')}"
+            rel="stylesheet" />
+        <link
+            href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/css/bootstrap-datepicker.min.css')}"
+            rel="stylesheet" />
+        <link
+            href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/css/jquery.steps.css')}"
+            rel="stylesheet" />
+        <link
+            href="{!URLFOR($Resource.BootStrap, '/bootstrapNew/font-awesome/css/font-awesome.min.css')}"
+            rel="stylesheet" type="text/css" />
+       
+        <apex:stylesheet value="//cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.1.8/semantic.css" />
+        <apex:stylesheet value="{!$Resource.ViewDataStyle}" />
+        <apex:stylesheet value="{!URLFOR($Resource.Ultra_Css)}"></apex:stylesheet>
+    <!-- Css -->
+
+    <!-- Scripts for Export CSV -->
+        <apex:includeScript value="{!$Resource.csvalasql}" />
+        <apex:includeScript value="{!$Resource.csvcore}" />
+        <apex:includeScript value="{!$Resource.csvjs}" />
+    <!-- End of Script for Export CSV -->
+
+    <!-- Scripts for Export pdf-->
+        <apex:includeScript value="{!$Resource.pdfmake}" />
+        <apex:includeScript value="{!$Resource.vfs_fonts}" />
+        <script type="text/javascript" src="/js/functions.js"></script>
+    <!-- End of Script for Export pdf-->
+
+    <!-- Scripts for Jquery, Bootstrap, AngularJs and Javascripts -->
+        <apex:includeScript value="{!URLFOR($Resource.UFHTjQueryResources, '/js/moment-with-locales.js')}" />
+        <script src="/soap/ajax/28.0/connection.js" type="text/javascript"></script>
+        <script src="/soap/ajax/37.0/apex.js" type="text/javascript"></script>
+        <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+        <script src="https://code.jquery.com/ui/1.9.0/jquery-ui.js"></script>
+        <script
+            src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.1/jquery-ui.js"></script>
+        <script
+            src="{!URLFOR($Resource.BootStrap, '/bootstrapNew/js/bootstrap.min.js')}"></script>
+        <script
+            src=" https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.1/jquery-ui.min.js"></script>
+        <script
+            src="{!URLFOR($Resource.BootStrap, '/bootstrapNew/js/bootstrap-datepicker.min.js')}"></script>
+        <script
+            src="{!URLFOR($Resource.BootStrap, '/bootstrapNew/js/jquery.steps.js')}"></script>
+       <!-- <link rel="stylesheet"
+            href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />-->
+        <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js" />
+        <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular-sanitize.js" />
+        <apex:includeScript value="{!$Resource.ViewDataScriptClone}" />
+    <!-- Scripts -->
+
+    <style>
+        .uibutton.pdf span {
+            background-image:
+                url("{!URLFOR($Resource.UltraFHT_Buttons, 'UltraFHt_Buttons/blue/pdf_blue.png')}")
+                !important;
+            margin-left: -3px;
+        }
+        
+        .uibutton.excel span {
+            background-image:
+                url("{!URLFOR($Resource.UltraFHT_Buttons, 'UltraFHt_Buttons/blue/excel_blue.png')}")
+                !important;
+            margin-left: -3px;
+        }
+        .bs .btn-cancel:hover {
+            color: #666666 !important;
+        }
+        .dateRange {
+            max-width: 90%;
+        }
+        .dropdownCls {
+            left: auto;
+            display: block;
+            top: 100%;
+            left: 0;
+            z-index: 1000;
+            min-width: 160px;
+            padding: 5px 0;
+            margin: 2px 0 0;
+            font-size: 11px;
+            list-style: none;
+            border: 1px solid #ccc;
+            border: 1px solid rgba(0,0,0,0.15);
+            border-radius: 4px;
+            background-color: #fff;
+            color:#a1a1a1;
+        }
+    </style>
+
+    <!-- This style class has pdf and excel images if moved in static resource button doesnot refer the images
+        and blank buttons get displayed
+        -->
+    <apex:form id="frm">
+        <div class="bs PageSizeDiv bgcolor-margin">
+            <div class="content-section-a bg-color">
+                <div class="content margin-top-10-padding">
+                    <div id="displayHistoryRecord" ng-app="myApp"
+                        ng-controller="fetchDataController" class="ng-cloak">
+                        <div>
+                            <!-- Title Section:
+                                This section displays title of the page along with the image in top left side of page
+                                -->
+                            <!-- Please keep the inline style in this section as it fails to apply when added to stylesheet -->
+                           
+                            <div>
+                                <apex:image value="{!$Resource.HistoricalDataImage}"
+                                    width="50px" styleClass="margin-10-0" />
+                                <img id="preview" style="display: none;"
+                                    src="{!$Resource.EternusLogo}" />
+                                <canvas id="myCanvas" style="display: none;" />
+                                <apex:outputLabel value="View Historical Data"
+                                    styleClass="PageTitleLabelStyle" />
+                            </div>
+                            <!-- End of Title Section -->
+                            <!-- Export Section:
+                                This section displays export buttons on right top side of the page.
+                                Buttons will display only when there will be any records for selected
+                                object and date range
+                                -->
+                            <div ng-show="filteredHistoryData.length > 0"
+                                class="ng-hide margin-float-right">
+                                <apex:outputPanel id="downloadLinks">
+                                    <apex:outputPanel >
+
+                                        <div class="btn-group">
+                                            <!-- Excel Button Start -->
+                                            <button type="button"
+                                                class="btn btn-default uibutton excel imagefix margin-bg-color"
+                                                title="{!$Label.VD_Export_Titile}" ng-click="exportData()">
+                                                <span></span>
+                                            </button>
+
+                                            <button type="button"
+                                                class="btn btn-default uibutton pdf imagefix margin-bg-color"
+                                                title="{!$Label.VD_ExportPdfTitile}"
+                                                ng-click="downloadPdf()">
+                                                <span></span>
+                                            </button>
+                                            <!-- Excel Button End -->
+                                        </div>
+
+                                    </apex:outputPanel>
+                                </apex:outputPanel>
+                            </div>
+                            <!-- End of Export section -->
+                        </div>
+                        <!-- Note Section:
+                            This section displays note for two hundred records
+                            -->
+
+                        <div ng-show="getShowMoreData();" class="ng-hide margin-bottom-20">
+                            {!$Label.ViewData_Note}</div>
+
+                        <!-- End of Note section -->
+                        <!-- Dialog Box:
+                            This Confirmation dialog box will display on click of View More Data button
+                            to confirm from user that they want to see 50000 records for selected object
+                            and process will take time to show 50000 records.
+                            -->
+                        <div id="dialog" title="Confirmation" class="padding-bottom-0">
+                            <div class="DialogPanelClass">
+                                <apex:outputPanel id="dialogP">
+                                    <div class="bs">
+                                        <div class="row margin-top-9">
+                                            <label class="asterix font-family-margin">{!$Label.VD_ViewMoreDataMessage}
+                                            </label>
+                                        </div>
+                                        <table>
+                                            <tr>
+                                                <td class="td-margin">
+                                                    <div class="final-btns margin-top-11">
+
+                                                        <!-- When clicked on Ok button, loads more data for an object -->
+                                                        <apex:commandButton value="Ok"
+                                                            html-ng-click="loadMoreDataForAnObject();"
+                                                            title="Confirm"
+                                                            styleClass="btn btn-sm btn-primary btn-ok"
+                                                            onclick="closeDialog();" />
+
+                                                        <!-- When clicked on Cancel button, the pop up gets closes -->
+                                                        <apex:commandButton value="Cancel"
+                                                            onClick="closeDialog();" title="Cancel"
+                                                            styleclass="btn btn-sm btn-default btn-cancel" />
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </apex:outputPanel>
+                            </div>
+                        </div>
+                        <!-- End of Dialog box -->
+                        <!-- Processing Loader -->
+                        <div class="loaderMain ng-hide" id="assign-action-spinner-main"
+                            ng-show="showLoader">
+                            <div id="assign-action-spinner-content">
+                                <img src="{!$Resource.Spinner_Image}"
+                                    alt="{!$Label.VD_Processing}" title="{!$Label.VD_Processing}" />
+                                <span class="padding-left font-bold">{!$Label.VD_Processing}</span>
+                            </div>
+                        </div>
+                        
+                        
+
+                        <!-- Display section:
+                            This section displays the history records along with pagination, filters and sorting.
+                            -->
+                        <!-- Please keep the inline style in this section as it fails to apply when added to stylesheet -->
+                        <div class="mCustomScrollbar" data-mcs-theme="dark">
+                            <div id="historyRecordDiv" class="panel-body font-margin">
+                                <div ng-show="fetchedHistoryData.length > 0" class="ng-cloak">
+
+                                    <!-- Display table -->
+                                    <table id="table1table1" class="object-grid scrollTable margintop-10 table-striped">
+                                        <!-- Table headers -->
+                                        <thead>
+                                            <tr>
+<!--                                                 <th style="width: 12% !important;"> -->
+<!--                                                     {!$Label.VD_RecordName} -->
+<!--                                                     <div class="inline-block"> -->
+<!--                                                         Sorting for Name -->
+<!--                                                         <i id="recordName" -->
+<!--                                                             class="sort icon pull-right cursor-pointer" -->
+<!--                                                             ng-click="sort('recordName')" /> -->
+<!--                                                         End of sorting -->
+<!--                                                         Filters for Name -->
+<!--                                                         <div class="dropdown cart pull-right div-ht"> -->
+<!--                                                             <img src="{!URLFOR($Resource.AppliedFilterIcon)}" -->
+<!--                                                                 ng-show="displayAppliedFilterIconRecordName" width="9" -->
+<!--                                                                 height="8" Class="margin-top-right " /> <i -->
+<!--                                                                 class="filter icon dropdown-toggle cursor-pointer" -->
+<!--                                                                 data-toggle="dropdown" -->
+<!--                                                                 ng-show="displayAppliedFilterIconRecordName" -->
+<!--                                                                 onclick="preventPropagation(true);" /> <i -->
+<!--                                                                 class="filter icon dropdown-toggle cursor-pointer" -->
+<!--                                                                 data-toggle="dropdown" -->
+<!--                                                                 ng-show="!displayAppliedFilterIconRecordName" -->
+<!--                                                                 onclick="preventPropagation(true);" /> -->
+<!--                                                             <ul class="dropdown-menu"> -->
+<!--                                                                 <span -->
+<!--                                                                     ng-repeat="x in fetchedHistoryData | orderBy:'recordName' | unique: 'recordName'"> -->
+<!--                                                                     <label onclick="preventPropagation(true);" -->
+<!--                                                                     styleClass="div-ht-17" -->
+<!--                                                                     ondblclick="preventPropagation(true);"> <input -->
+<!--                                                                         type="checkbox" -->
+<!--                                                                         ng-model="myRecordFilter.selected[getHtml(x.recordName)]" -->
+<!--                                                                         onclick="preventPropagation(true);" -->
+<!--                                                                         ondblclick="preventPropagation(true);" -->
+<!--                                                                         ng-true-value="'{{getHtml(x.recordName);}}'" -->
+<!--                                                                         ng-false-value="''" styleClass="webkit-transform"> -->
+<!--                                                                         {{x.recordName}} </input> -->
+<!--                                                                 </label><br /> -->
+<!--                                                                 </span> -->
+<!--                                                                 <div class="ui divider margin-5-9-4-9"></div> -->
+<!--                                                                 Please keep the inline style in this section as it fails to apply when added to stylesheet -->
+<!--                                                                 <li><span -->
+<!--                                                                     class="submitRecordfilter -->
+<!--                                                                     clearFilterText btn btn-primary" -->
+<!--                                                                     id="records" -->
+<!--                                                                     style="font-family: pageheader !important; font-size: 16px; font-weight: bold; margin-left: 25px; background-color: #1797c0 !important; background: none; padding: 5px; border-radius: 0px; margin-right: 8px;" -->
+<!--                                                                     ng-click="preApplyFilter('{!$Label.VD_RecordName}'); applyFilters(); loseFocus(); "> -->
+<!--                                                                         {!$Label.VD_Ok} </span> <span id="clearAllRecordFilter" -->
+<!--                                                                     style="margin-right: 15px;" -->
+<!--                                                                     ng-click="clearFilter('recordName');"> <span -->
+<!--                                                                         class="clearFilterText" -->
+<!--                                                                         style="background-color: #f2f2f2 !important; color: #666666 !important; border: none; line-height: 8px !important; padding: 5px; border-radius: 0px; font-family: pageheader !important; font-size: 16px; font-weight: bold;"> -->
+<!--                                                                             {!$Label.VD_Clear_Filter} </span> -->
+<!--                                                                 </span></li> -->
+<!--                                                             </ul> -->
+<!--                                                         </div> -->
+<!--                                                         End of Name filters -->
+<!--                                                     </div> -->
+<!--                                                 </th> -->
+
+                                                <th style="width: 15% !important;">
+                                                    {!$Label.VD_Modified_Time} <!-- Sorting for Modified Time-->
+                                                    <div class="inline-block">
+                                                        <i id="modifiedTime"
+                                                            class="sort icon pull-right cursor-pointer"
+                                                            ng-click="sort('modifiedTime')" />
+                                                    </div> <!-- End of user Modified Time -->
+                                                </th>
+                                                <th style="display: none !important;"
+                                                    ng-click="sort('modifiedDisplayTime')">
+                                                    modifiedDisplayTime <span class="glyphicon sort-icon"
+                                                    ng-show="sortKey=='modifiedOn'"></span>
+                                                </th>
+
+                                                <th style="width: 12% !important;">
+                                                    {!$Label.VD_Modified_By}
+                                                    <div class="inline-block">
+                                                        <!-- Sorting for User-->
+                                                        <i id="userLabel"
+                                                            class="sort icon pull-right cursor-pointer"
+                                                            ng-click="sort('modifiedByName')" />
+                                                        <!-- End of user sorting -->
+                                                        <!-- Filters for User -->
+                                                        <div class="dropdown cart pull-right div-ht">
+                                                            <img src="{!URLFOR($Resource.AppliedFilterIcon)}"
+                                                                ng-show="displayAppliedFilterIconUserName" width="9"
+                                                                height="8" Class="margin-top-right" /> <i
+                                                                class="filter icon dropdown-toggle cursor-pointer"
+                                                                data-toggle="dropdown"
+                                                                ng-show="displayAppliedFilterIconUserName"
+                                                                onclick="preventPropagation(true);" /> <i
+                                                                class="filter icon dropdown-toggle cursor-pointer"
+                                                                data-toggle="dropdown"
+                                                                ng-show="!displayAppliedFilterIconUserName"
+                                                                onclick="preventPropagation(true);" />
+                                                                {{displayUserData}}
+                                                            <ul class="dropdown-menu padding-top-0">
+                                                                <span
+                                                                    ng-repeat="x in fetchedUserData | orderBy:'userName' | unique: 'userName' ">
+                                                                    <label onclick="preventPropagation(true);"
+                                                                    styleClass="div-ht-17"
+                                                                    ondblclick="preventPropagation(true);"><input
+                                                                        type="checkbox"
+                                                                        ng-model="myUserFilter.selected[getHtml(x.userName)]"
+                                                                        onclick="preventPropagation(true);"
+                                                                        ondblclick="preventPropagation(true);"
+                                                                        ng-true-value="'{{getHtml(x.userName);}}'"
+                                                                        ng-false-value="''" styleClass="webkit-transform">
+                                                                        {{x.userName}}</input> </label><br />
+                                                                </span>
+                                                                <div class="ui divider margin-5-9-4-9"></div>
+                                                                <!-- Please keep the inline style in this section as it fails to apply when added to stylesheet. -->
+                                                                <li><span
+                                                                    class="submitRecordfilter
+                                                                    clearFilterText btn btn-primary"
+                                                                    id="records"
+                                                                    style="font-family: pageheader !important; font-size: 16px; font-weight: bold; margin-left: 25px; background-color: #1797c0 !important; background: none; padding: 5px; border-radius: 0px; margin-right: 8px;"
+                                                                    ng-click="preApplyFilter('{!$Label.VD_Modified_By}');applyFilters();loseFocus();">
+                                                                        {!$Label.VD_Ok} </span> <span id="clearAllRecordFilter"
+                                                                    style="margin-right: 15px;"
+                                                                    ng-click="clearFilter('userName');"> <span
+                                                                        class="clearFilterText"
+                                                                        style="background-color: #f2f2f2 !important; color: #666666 !important; border: none; line-height: 8px !important; padding: 5px; border-radius: 0px; font-family: pageheader !important; font-size: 16px; font-weight: bold;">
+                                                                            {!$Label.VD_Clear_Filter} </span>
+                                                                </span></li>
+                                                            </ul>
+                                                        </div>
+                                                        <!-- End of User filters -->
+                                                    </div>
+                                                </th>
+
+                                                <th style="width: 15% !important;">
+                                                    {!$Label.VD_Modified_Field}
+                                                    <div class="inline-block ">
+                                                        <!-- Filters for field -->
+                                                        <i id="field" class="sort icon pull-right cursor-pointer"
+                                                            ng-click="sort('fieldLabel')" />
+                                                        <div class="dropdown cart pull-right div-ht">
+                                                            <img src="{!URLFOR($Resource.AppliedFilterIcon)}"
+                                                                ng-show="displayAppliedFilterIconFieldName" width="9"
+                                                                height="8" Class="margin-top-right" /> <i
+                                                                class="filter icon dropdown-toggle cursor-pointer"
+                                                                data-toggle="dropdown"
+                                                                ng-show="displayAppliedFilterIconFieldName"
+                                                                onclick="preventPropagation(true);" /> <i
+                                                                class="filter icon dropdown-toggle cursor-pointer"
+                                                                data-toggle="dropdown"
+                                                                ng-show="!displayAppliedFilterIconFieldName"
+                                                                onclick="preventPropagation(true);" />
+                                                            <ul class="dropdown-menu">
+                                                                <span
+                                                                    ng-repeat="x in filteredHistoryData | orderBy:'fieldLabel' | unique: 'fieldLabel'">
+                                                                    <label onclick="preventPropagation(true);"
+                                                                    ondblclick="preventPropagation(true);"
+                                                                    class="div-ht-17"><input type="checkbox"
+                                                                        ng-model="myFieldFilter.selected[x.fieldName]"
+                                                                        onclick="preventPropagation(true);"
+                                                                        ondblclick="preventPropagation(true);"
+                                                                        ng-true-value="'{{x.fieldName}}'" ng-false-value="''"
+                                                                        styleClass="webkit-transform">
+                                                                        {{x.fieldLabel}} </input> </label><br />
+                                                                </span>
+                                                                <div class="ui divider margin-5-9-4-9"></div>
+                                                                <li><span
+                                                                    class="submitRecordfilter clearFilterText btn btn-primary"
+                                                                    id="records"
+                                                                    style="font-family: pageheader !important; font-size: 16px; font-weight: bold; margin-left: 25px; background-color: #1797c0 !important; background: none; padding: 5px; border-radius: 0px; margin-right: 8px;"
+                                                                    ng-click="preApplyFilter('{!$Label.VD_Modified_Field}');applyFilters();loseFocus();">
+                                                                        {!$Label.VD_Ok}</span> <span id="clearAllRecordFilter"
+                                                                    style="margin-right: 15px;"
+                                                                    ng-click="clearFilter('fieldName');"> <span
+                                                                        class="clearFilterText"
+                                                                        style="background-color: #f2f2f2 !important; color: #666666 !important; border: none; font-family: pageheader !important; line-height: 8px !important; font-size: 16px; font-weight: bold; padding: 5px; border-radius: 0px;">
+                                                                            {!$Label.VD_Clear_Filter} </span>
+                                                                </span></li>
+                                                            </ul>
+                                                        </div>
+                                                        <!-- End of Field filters -->
+                                                    </div>
+                                                </th>
+
+                                                <th style="width: 15% !important;">
+                                                    {!$Label.VD_Old_Value}
+                                                    <div class="inline-block">
+                                                        <!-- Sorting for old value -->
+                                                        <i id="oldValue"
+                                                            class="sort icon pull-right cursor-pointer"
+                                                            ng-click="sort('oldValue')" />
+                                                        <!-- End of old value sorting -->
+                                                    </div>
+                                                </th>
+
+                                                <th style="width: 15% !important;">
+                                                    {!$Label.VD_New_Value}
+                                                    <div class="inline-block">
+                                                        <!-- Sorting for new value -->
+                                                        <i id="newValue"
+                                                            class="sort icon pull-right cursor-pointer"
+                                                            ng-click="sort('newValue')" />
+                                                        <!-- End of new value sorting -->
+                                                    </div>
+                                                </th>
+                                                <th style="width: 15% !important;">
+                                                    {!$Label.VD_DataType}
+                                                    <div class="inline-block ">
+                                                        <!-- Filters for field -->
+                                                        <i id="field" class="sort icon pull-right cursor-pointer"
+                                                            ng-click="sort('fieldtype')" />
+                                                        <div class="dropdown cart pull-right div-ht">
+                                                            <img src="{!URLFOR($Resource.AppliedFilterIcon)}"
+                                                                ng-show="displayAppliedFilterIconDataTypeName" width="9"
+                                                                height="8" Class="margin-top-right" /> <i
+                                                                class="filter icon dropdown-toggle cursor-pointer"
+                                                                data-toggle="dropdown"
+                                                                ng-show="displayAppliedFilterIconDataTypeName"
+                                                                onclick="preventPropagation(true);" /> <i
+                                                                class="filter icon dropdown-toggle cursor-pointer"
+                                                                data-toggle="dropdown"
+                                                                ng-show="!displayAppliedFilterIconDataTypeName"
+                                                                onclick="preventPropagation(true);" />
+                                                            <ul class="dropdown-menu">
+                                                                <span
+                                                                    ng-repeat="x in dataTypeList  | orderBy:'ac' | unique: 'abc'">
+                                                                    <label onclick="preventPropagation(true);"
+                                                                    ondblclick="preventPropagation(true);"
+                                                                    class="div-ht-17"><input type="checkbox"
+                                                                        ng-model="myTypeFilter.selected[getHtml(x)]"
+                                                                        onclick="preventPropagation(true);"
+                                                                        ondblclick="preventPropagation(true);"
+                                                                        ng-true-value="'{{x}}'" ng-false-value="''"
+                                                                        styleClass="webkit-transform">
+                                                                        {{x}} </input> </label><br />
+                                                                </span>
+                                                                <div class="ui divider margin-5-9-4-9"></div>
+                                                                <li><span
+                                                                    class="submitRecordfilter clearFilterText btn btn-primary"
+                                                                    id="records"
+                                                                    style="font-family: pageheader !important; font-size: 16px; font-weight: bold; margin-left: 25px; background-color: #1797c0 !important; background: none; padding: 5px; border-radius: 0px; margin-right: 8px;"
+                                                                    ng-click="preApplyFilter('{!$Label.VD_DataType}');applyFilters(); loseFocus();">
+                                                                        {!$Label.VD_Ok}</span> <span id="clearAllRecordFilter"
+                                                                    style="margin-right: 15px;"
+                                                                    ng-click="clearFilter('fieldType');"> <span
+                                                                        class="clearFilterText"
+                                                                        style="background-color: #f2f2f2 !important; color: #666666 !important; border: none; font-family: pageheader !important; line-height: 8px !important; font-size: 16px; font-weight: bold; padding: 5px; border-radius: 0px;">
+                                                                            {!$Label.VD_Clear_Filter} </span>
+                                                                </span></li>
+                                                            </ul>
+                                                        </div>
+                                                        </div>
+                                                </th>
+                                                <th style="width: 12% !important;">
+                                                    {!$Label.VD_Severity}
+                                                    <div class="inline-block ">
+                                                        <!-- Filters for field -->
+                                                        <i id="field" class="sort icon pull-right cursor-pointer"
+                                                            ng-click="sort('fieldSeverity')" />
+                                                        <div class="dropdown cart pull-right div-ht">
+                                                            <img src="{!URLFOR($Resource.AppliedFilterIcon)}"
+                                                                ng-show="displayAppliedFilterIconSeverityName" width="9"
+                                                                height="8" Class="margin-top-right" /> <i
+                                                                class="filter icon dropdown-toggle cursor-pointer"
+                                                                data-toggle="dropdown"
+                                                                ng-show="displayAppliedFilterIconSeverityName"
+                                                                onclick="preventPropagation(true);" /> <i
+                                                                class="filter icon dropdown-toggle cursor-pointer"
+                                                                data-toggle="dropdown"
+                                                                ng-show="!displayAppliedFilterIconSeverityName"
+                                                                onclick="preventPropagation(true);" />
+                                                            <ul class="dropdown-menu">
+                                                                <span
+                                                                    ng-repeat="x in fetchedHistoryData | orderBy:'fieldSeverity' | unique: 'fieldSeverity'">
+                                                                    <label onclick="preventPropagation(true);"
+                                                                    ondblclick="preventPropagation(true);"
+                                                                    class="div-ht-17"><input type="checkbox"
+                                                                        ng-model="mySeverityFilter.selected[getHtml(x.fieldSeverity)]"
+                                                                        onclick="preventPropagation(true);"
+                                                                        ondblclick="preventPropagation(true);"
+                                                                        ng-true-value="'{{x.fieldSeverity}}'" ng-false-value="''"
+                                                                        styleClass="webkit-transform">
+                                                                        {{x.fieldSeverity}} </input> </label><br />
+                                                                </span>
+                                                                <div class="ui divider margin-5-9-4-9"></div>
+                                                                <li><span
+                                                                    class="submitRecordfilter clearFilterText btn btn-primary"
+                                                                    id="records"
+                                                                    style="font-family: pageheader !important; font-size: 16px; font-weight: bold; margin-left: 25px; background-color: #1797c0 !important; background: none; padding: 5px; border-radius: 0px; margin-right: 8px;"
+                                                                    ng-click="preApplyFilter('{!$Label.VD_Severity}');applyFilters(); loseFocus();">
+                                                                        {!$Label.VD_Ok}</span> <span id="clearAllRecordFilter"
+                                                                    style="margin-right: 15px;"
+                                                                    ng-click="clearFilter('fieldSeverity');"> <span
+                                                                        class="clearFilterText"
+                                                                        style="background-color: #f2f2f2 !important; color: #666666 !important; border: none; font-family: pageheader !important; line-height: 8px !important; font-size: 16px; font-weight: bold; padding: 5px; border-radius: 0px;">
+                                                                            {!$Label.VD_Clear_Filter} </span>
+                                                                </span></li>
+                                                            </ul>
+                                                        </div>
+                                                        </div>
+                                                </th>
+                                                <!-- inline CSS on th/td if moved to class it breaks we have to restructure it -->
+                                            </tr>
+                                        </thead>
+                                        <!-- End of table headers -->
+
+                                        <!-- Table body -->
+                                        <!-- Please keep the inline style in this section as it fails to apply when added to stylesheet. -->
+                                        <tbody class="hidden-element font-weight"
+                                            ng-show="filteredHistoryData.length > 0">
+                                            <tr
+                                                data-ng-repeat="x in filteredHistoryData | orderBy:sortKey:reverse | firstPage:currentPage*pageSize | limitTo:pageSize track by $index"
+                                                >
+<!--                                                 <td style="width: 12% !important; word-wrap: break-all;"><a -->
+<!--                                                     href="/{{x.parentId}}" target="_blank"> -->
+<!--                                                         {{x.recordName}}</a></td> -->
+                                                <td style="display: none !important;" class="hidden-element">
+                                                    {{x.modifiedTime}}</td>
+                                                <td style="width: 15% !important; word-wrap: break-all;">
+                                                    {{x.modifiedDisplayTime}}</td>
+                                                <td
+                                                    style="width: 12% !important; padding-left: 5px; word-break: break-all;"><a
+                                                    href="/{{x.modifiedById}}" target="_blank">
+                                                        {{x.modifiedByName}}</a></td>
+                                                <td
+                                                    style="width: 15% !important; padding-left: 7px; word-break: break-all;">
+                                                    <label class="Field-Label">{{x.fieldLabel}}</label><br/>
+                                                    <label class="Field-Name">{{x.fieldName}}</label>
+                                                </td>
+                                                <td
+                                                    style="width: 15% !important; padding-left: 11px; word-break: break-all;"
+                                                    id="td1" ng-bind-html="x.oldValue"></td>
+                                                <td
+                                                    style="width: 15% !important; padding-left: 15px; word-break: break-all;"
+                                                    id="td2" ng-bind-html="x.newValue"></td>
+                                                <td
+                                                    style="width: 15% !important; padding-left: 15px; word-break: break-all;"
+                                                    id="td2">{{x.fieldType}} </td>
+                                                <td
+                                                    style="width: 12% !important; padding-left: 15px; word-break: break-all;"
+                                                    id="td2">{{x.fieldSeverity}} </td>
+                                            </tr>
+                                        </tbody>
+                                        <!-- inline CSS on th/td if moved to class it breaks we have to restructure table -->
+                                        <!-- End of table body -->
+                                    </table>
+                                    <!-- End of table -->
+
+                                    <!-- Pagination for records -->
+                                    <div class="pagination hidden-element border-top-solid"
+                                        ng-show="filteredHistoryData.length > 0">
+                                        <div class="page-counter font-bold">
+                                            {!$Label.VD_Showing} &nbsp; {{ ((currentPage*pageSize)+1) }}
+                                            &nbsp; {!$Label.VD_Hyphen} &nbsp; <span
+                                                ng-if="(pageSize*(currentPage+1))<=filteredHistoryData.length">{{(pageSize*(currentPage+1))}}
+                                            </span> <span
+                                                ng-if="(pageSize*(currentPage+1))>filteredHistoryData.length">{{filteredHistoryData.length}}
+                                            </span>{!$Label.VD_Of} {{filteredHistoryData.length}}
+                                            {!$Label.VD_Records}
+                                        </div>
+                                        
+                                        <!-- View More Data button -->
+                                        <div ng-show="getShowMoreData();"
+                                            class="col-lg-2 col-md-2 col-sm-2 ng-hide">
+                                            <label onclick="showMoreRecords();">Show more records</label>
+<!--                                            <button type="button" -->
+<!--                                                class="btn btn-sm btn-small showMoreButton bgColor-white margin-10" -->
+<!--                                                title="View More Data" onclick="showPopup();"> -->
+<!--                                                {!$Label.VD_ShowMoreDataButtonLabel}</button> -->
+                                        </div>
+                                        <!-- End of  View More Data button-->
+                                        
+<!--                                         <div class="page-actions"> -->
+<!--                                             Pagination section Start -->
+<!--                                             Please keep the inline style in this section as it fails to apply when added to stylesheet. -->
+<!--                                             <apex:outputPanel id="navigateButtons"> -->
+<!--                                                 First Page Button -->
+<!--                                                 <apex:commandButton title="First" -->
+<!--                                                     image="{!URLFOR($Resource.BootStrap,'/bootstrapNew/images/First-arrow.png')}" -->
+<!--                                                     styleclass="first-btn btn btn-default" -->
+<!--                                                     reRender="renderHyperLink" -->
+<!--                                                     style="background-color:#fff !important; -->
+<!-- /*                                                     border: none; vertical-align: bottom;" */ -->
+<!--                                                     html-ng-disabled="currentPage == 0" -->
+<!--                                                     html-ng-click="paginationForAllButton(currentPage=0);" -->
+<!--                                                     status="actStatusId" /> -->
+<!--                                                 Previous Page Button -->
+<!--                                                 <apex:commandButton title="Previous" -->
+<!--                                                     image="{!URLFOR($Resource.BootStrap,'/bootstrapNew/images/previous-arrow.png')}" -->
+<!--                                                     styleclass="previous-btn btn btn-default" -->
+<!--                                                     reRender="renderHyperLink" -->
+<!--                                                     style="background-color:#fff !important; -->
+<!-- /*                                                     border: none; vertical-align: bottom;" */ -->
+<!--                                                     html-ng-disabled="currentPage == 0" -->
+<!--                                                     html-ng-click="paginationForAllButton(currentPage-1);" -->
+<!--                                                     status="actStatusId" /> -->
+<!--                                                 Next Page Button -->
+<!--                                                 <apex:commandButton title="Next" -->
+<!--                                                     image="{!URLFOR($Resource.BootStrap,'/bootstrapNew/images/next-arrow.png')}" -->
+<!--                                                     styleclass="next-btn btn btn-default" -->
+<!--                                                     reRender="renderHyperLink" -->
+<!--                                                     style="background-color:#fff !important; -->
+<!-- /*                                                     border: none; vertical-align: bottom;" */ -->
+<!--                                                     html-ng-disabled="currentPage >= filteredHistoryData.length/pageSize - 1" -->
+<!--                                                     html-ng-click="paginationForAllButton(currentPage+1);" -->
+<!--                                                     status="actStatusId" /> -->
+<!--                                                 Last Page Button -->
+<!--                                                 <apex:commandButton title="Last" -->
+<!--                                                     image="{!URLFOR($Resource.BootStrap,'/bootstrapNew/images/latest-arrow.png')}" -->
+<!--                                                     styleclass="last-btn btn btn-default" -->
+<!--                                                     reRender="renderHyperLink" -->
+<!--                                                     style="background-color:#fff !important; -->
+<!-- /*                                                     border: none; vertical-align: bottom;" */ -->
+<!--                                                     html-ng-disabled="currentPage >= filteredHistoryData.length/pageSize - 1" -->
+<!--                                                     html-ng-click="paginationForAllButton(noOfPages - 1);" -->
+<!--                                                     status="actStatusId" /> -->
+<!--                                             </apex:outputPanel> -->
+<!--                                             Pagination buttons End -->
+<!--                                             if the inline css is moved in class it breakes because another CSS overrides buttons style -->
+<!--                                         </div> -->
+                                    </div>
+
+                                    <!-- Display message when no record to display for the selected object-->
+                                    <div class="message-viewdata infoM3 hidden-element" role="alert"
+                                        ng-show="filteredHistoryData.length == 0 &&
+                                        fetchedHistoryData.length > 0 && !noSelectedObject">
+                                        <table border="0" cellpadding="0" cellspacing="0"
+                                            class="messageTable padding-0-margin">
+                                            <tbody>
+                                                <tr valign="top">
+                                                    <td><img alt="info" class="msgIcon" src="/s.gif"
+                                                        title="info" /></td>
+                                                    <td class="messageCell filterMsgAllignment">
+                                                        <div class="messageText">
+                                                            {!$Label.Information_Message_For_Filters }<br />
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td></td>
+                                                    <td></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Display message selected object is --NONE--- -->
+                                <div class="message infoM3 hidden-element" role="alert"
+                                    ng-show="fetchedHistoryData.length == 0 && !noSelectedObject && !showLoader">
+                                    <table border="0" cellpadding="0" cellspacing="0"
+                                        class="messageTable padding-0-margin">
+                                        <tbody>
+                                            <tr valign="top">
+                                                <td><img alt="info" class="msgIcon" src="/s.gif"
+                                                    title="info" /></td>
+                                                <td class="messageCell">
+                                                    <div class="messageText">
+                                                        {!$Label.Information_Message }<br />
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td></td>
+                                                <td></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Display message when there are no records to display for applied filters -->
+                                <div class="message infoM3 hidden-element" role="alert"
+                                    ng-show="noSelectedObject">
+                                    <table border="0" cellpadding="0" cellspacing="0"
+                                        class="messageTable padding-0-margin">
+                                        <tbody>
+                                            <tr valign="top">
+                                                <td><img alt="info" class="msgIcon" src="/s.gif"
+                                                    title="info" /></td>
+                                                <td class="messageCell">
+                                                    <div class="messageText">
+                                                        {!$Label.Information_Message_on_View_Page} <br />
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Generates start and end date for the selected date range option -->
+                        <apex:actionFunction name="DateFileter" action="{!dateFilter}"
+                            reRender="CustomDate" status="actStatusId"
+                            oncomplete="validateDate(false); getHistoryRecordsForObject();
+                            disableDateFields(); hideDateFormat();"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </apex:form>
+
+    <script>
+       
+        var remoteActionGetAttachmentCount = '{!JSENCODE(HTMLENCODE($RemoteAction.DataProviderForViewData.getAttachmentCount))}';
+        var remoteActionfetchAttachments = '{!JSENCODE(HTMLENCODE($RemoteAction.DataProviderForViewData.fetchAttachments))}';
+        var startDate;
+        var endDate;
+        var selectedObjLabel;
+
+        var dateFormatVar ='{!JSENCODE(HTMLENCODE(dateFormat))}';
+        var isAllDataAccessible = '{!JSENCODE(HTMLENCODE(IF(isAllDataAccessible, "true", "false")))}';
+        var pageSize = '{!JSENCODE(HTMLENCODE(TEXT(pageSize)))}';
+        var salesforceBaseUrl = '{!JSENCODE(HTMLENCODE(salesforceBaseUrl))}'; 
+
+        //input data for fetching history data 
+        var selectedObj;
+        var startDate;
+        var endDate;
+        var firstName = '{!JSENCODE(HTMLENCODE($User.FirstName))}';
+        var LastName = '{!JSENCODE(HTMLENCODE($User.LastName))}';
+
+        var LabelVD_RecordName = '{!JSENCODE(HTMLENCODE($Label.VD_RecordName))}';
+        var LabelVD_Modified_on = '{!JSENCODE(HTMLENCODE($Label.VD_Modified_on))}';
+        var LabelVD_Modified_By = '{!JSENCODE(HTMLENCODE($Label.VD_Modified_By))}';
+        var LabelVD_Modified_Field = '{!JSENCODE(HTMLENCODE($Label.VD_Modified_Field))}';
+        var LabelVD_Old_Value = '{!JSENCODE(HTMLENCODE($Label.VD_Old_Value))}';
+        var LabelVD_New_Value = '{!JSENCODE(HTMLENCODE($Label.VD_New_Value))}';
+        var LabelVD_JsonRecordName = '{!JSENCODE(HTMLENCODE($Label.VD_JsonRecordName))}';
+        var LabelVD_JsonModifiedDisplayTime = '{!JSENCODE(HTMLENCODE($Label.VD_JsonModifiedDisplayTime))}';
+        var LabelVD_JsonModifiedByName ='{!JSENCODE(HTMLENCODE($Label.VD_JsonModifiedByName))}';
+        var LabelVD_JsonfieldLabel = '{!JSENCODE(HTMLENCODE($Label.VD_JsonfieldLabel))}';
+        var LabelVD_JsonoldValue = '{!JSENCODE(HTMLENCODE($Label.VD_JsonoldValue))}';
+        var LabelVD_JsonnewValue = '{!JSENCODE(HTMLENCODE($Label.VD_JsonnewValue))}';
+        var LabelExported_by_Label = '{!JSENCODE(HTMLENCODE($Label.Exported_by_Label))}';
+        var UserFirstName = '{!JSENCODE(HTMLENCODE($User.FirstName))}';
+        var UserLastName = '{!JSENCODE(HTMLENCODE($User.LastName))}';
+        var LabelVD_on = '{!JSENCODE(HTMLENCODE($Label.VD_on))}';
+        var LabelVD_powered_by = '{!JSENCODE(HTMLENCODE($Label.VD_powered_by))}'; 
+        var LabelVD_company_name = '{!JSENCODE(HTMLENCODE($Label.VD_company_name))}';
+        var LabelVD_page = '{!JSENCODE(HTMLENCODE($Label.VD_page))}';
+        var LabelVD_Of =  '{!JSENCODE(HTMLENCODE($Label.VD_Of))}';
+        var LabelVD_Title = '{!JSENCODE(HTMLENCODE($Label.VD_Title))}';
+        var UserFirstName = firstName.replace(/\s/g, '');
+        var UserLastName = LastName.replace(/\s/g, ''); 
+        var UserConcatName = UserFirstName + UserLastName ;
+        var UserName = '';
+        var PDFLeftMargin = 0;
+        var LabelVD_SearchUser = '{!JSENCODE(HTMLENCODE($Label.VD_SearchUser))}';
+        var LabelVD_SearchSeverity = '{!JSENCODE(HTMLENCODE($Label.VD_SearchSeverity))}';
+        var LabelVD_SearchDataType = '{!JSENCODE(HTMLENCODE($Label.VD_SearchDataType))}';
+        var LabelVD_DataType = '{!JSENCODE(HTMLENCODE($Label.VD_DataType))}';
+        var LabelVD_Severity = '{!JSENCODE(HTMLENCODE($Label.VD_Severity))}';
+        var remoteActiongetOrgUsers = '{!JSENCODE(HTMLENCODE($RemoteAction.DataProviderForViewData.getOrgUsers))}';
+        var remoteActiongetDataTypesForObject = '{!JSENCODE(HTMLENCODE($RemoteAction.DataProviderForViewData.getDataTypesForObject))}';
+        var isRelatedListFlag = {!isRelatedList};
+        var parentId = '{!JSENCODE(HTMLENCODE(recordId))}';
+        var parentName = '{!JSENCODE(HTMLENCODE(parentObjName))}';
+        // This is to remove the blank space between First Name and Last Name and append dots because on pdf page
+        // we can display only 12 characters
+        
+        if(UserFirstName != null && UserFirstName != '' && UserFirstName.length > 20) {
+        
+            UserName = UserFirstName.substring(0,20);
+            UserName += '..';
+        }else  {
+            UserName = UserFirstName + ' ';
+        }
+        
+        if(UserName != null && UserName != '' && (20-UserName.length) < 20 && (20-UserName.length)>0 ){
+            
+            if(UserLastName != null && UserLastName != '' && UserLastName.length >= (20-UserName.length)) {
+                UserName += UserLastName.substring(0,(20-UserName.length));
+                UserName += '..';
+            
+            }else  {
+                UserName += UserLastName ;
+            }
+        }
+        
+        if(UserName.length <= 15){
+            PDFLeftMargin = 32; 
+        }else{
+            PDFLeftMargin = 5;
+        }
+        
+        /**
+         *@Description: Sets defaults for showing / hiding necessary components on the page when the page loads 
+         * @Param: NA
+         * @Return: NA
+         * @Date: 04/06/2016
+         **/
+        $(document).ready(function() {
+            $(".dateFormat").hide();
+            $(".viewDataButton").hide();
+            $(".NumberOfDay").hide();
+            $("body").on("click", ".ui-dialog-titlebar-close", function(event) {
+                $("#dialog").dialog("close");
+                $("body").css("overflow-y", "visible");
+            });
+            $('#dialog').hide();
+
+            $(".hidden-element").removeClass("hidden-element");
+            setInputData();
+            selectedObjLabel = $(".object option:selected").text();
+        });
+
+        /**
+         * @Description: This function sets value in input data selectedObj, startDate and endDate 
+         * @Param: NA
+         * @Return: NA
+         * @Date: 02/06/2016
+         **/
+        function setInputData() {
+            //var isRelatedListFlag = {!isRelatedList};
+            if(isRelatedListFlag == true) {
+                startDate = '{!JSENCODE(HTMLENCODE(startDateRL))}';
+                endDate = '{!JSENCODE(HTMLENCODE(endDateRL))}';
+            } else { 
+                startDate = '{!JSENCODE(HTMLENCODE(startDate))}';
+                endDate = '{!JSENCODE(HTMLENCODE(endDate))}';
+            }
+            selectedObj = '{!JSENCODE(HTMLENCODE(selectedObject))}';
+        }
+ 
+        /**
+         * @Description: When click on sorting icon it toggles the data in ascending/descending order
+         * @Return: NA
+         * @Date: 04/06/2016
+         **/
+        $("body").on("click", ".scrollTable th .sort", function() {
+            elemntId = $(this).attr("id");
+            $(".scrollTable th .sort").each(function() {
+                if (!($(this).attr("id") == elemntId))
+                    $(this).removeClass("ascending descending");
+            });
+            if ($(this).hasClass("ascending")) {
+                $(this).removeClass("ascending").addClass("descending");
+            } else if ($(this).hasClass("descending")) {
+                $(this).removeClass("descending").addClass("ascending");
+            } else {
+                $(this).addClass("ascending");
+            }
+        });
+
+        /**
+         * @Description: This function will remove focus on date field when the page loads
+         * @Param: NA
+         * @Return: NA
+         * @Date: 02/06/2016
+         **/
+        function setFocusOnLoad() {
+        }
+
+        /**
+         * @Description: Close dialog hides the view more data pop up window
+         * @Param: NA
+         * @Return: NA
+         * @Date: 30/06/2016
+         **/
+        function closeDialog() {
+            $("#dialog").dialog("close");
+            $("body").css("overflow-y", "visible");
+        }
+    </script>
+    <apex:includeScript value="{!$Resource.ViewDataScriptClone}" />
+
+</apex:component>

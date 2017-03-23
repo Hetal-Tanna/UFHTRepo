@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <caseValues>
+        <value>Sharing Purpose</value>
+    </caseValues>
+    <caseValues>
+        <plural>true</plural>
+        <value>Sharing Purposes</value>
+    </caseValues>
+    <fields>
+        <label><!-- Currency Field --></label>
+        <name>Currency_Field__c</name>
+    </fields>
+    <fields>
+        <label><!-- DateTime_Field --></label>
+        <name>DateTime_Field__c</name>
+    </fields>
+    <fields>
+        <label><!-- Date Field --></label>
+        <name>Date_Field__c</name>
+    </fields>
+    <fields>
+        <label><!-- EncryptedFieldsFor All --></label>
+        <name>EncryptedFieldsFor_All__c</name>
+    </fields>
+    <fields>
+        <label><!-- EncryptedFieldsFor CreditCard --></label>
+        <name>EncryptedFieldsFor_CreditCard__c</name>
+    </fields>
+    <fields>
+        <label><!-- EncryptedFieldsFor LastFour --></label>
+        <name>EncryptedFieldsFor_LastFour__c</name>
+    </fields>
+    <fields>
+        <label><!-- EncryptedFieldsFor Nino --></label>
+        <name>EncryptedFieldsFor_Nino__c</name>
+    </fields>
+    <fields>
+        <label><!-- EncryptedFieldsFor SIN --></label>
+        <name>EncryptedFieldsFor_SIN__c</name>
+    </fields>
+    <fields>
+        <label><!-- EncryptedFieldsFor SSN --></label>
+        <name>EncryptedFieldsFor_SSN__c</name>
+    </fields>
+    <fields>
+        <label><!-- EncryptedString Field --></label>
+        <name>EncryptedString_Field__c</name>
+    </fields>
+    <fields>
+        <label><!-- Percent Field --></label>
+        <name>Percent_Field__c</name>
+    </fields>
+    <fields>
+        <label><!-- Text Field --></label>
+        <name>Text_Field__c</name>
+    </fields>
+    <startsWith>Consonant</startsWith>
+</CustomObjectTranslation>

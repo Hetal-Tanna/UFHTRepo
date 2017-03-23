@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <caseValues>
+        <plural>false</plural>
+        <value>Feature Installation Master</value>
+    </caseValues>
+    <caseValues>
+        <plural>true</plural>
+        <value>Feature Installation Master</value>
+    </caseValues>
+    <fields>
+        <help><!-- Comments by the user (if any) --></help>
+        <label><!-- Comments --></label>
+        <name>Comments__c</name>
+    </fields>
+    <fields>
+        <help><!-- Salesforce.com ID of the user who installed the feature --></help>
+        <label><!-- Feature Installed By --></label>
+        <name>Feature_Installed_By__c</name>
+    </fields>
+    <fields>
+        <help><!-- Timestamp when the application was installed --></help>
+        <label><!-- Installation Date/Time --></label>
+        <name>Installation_Date_Time__c</name>
+    </fields>
+    <fields>
+        <help><!-- Designates whether the feature is activated for this customer or not --></help>
+        <label><!-- Is Active? --></label>
+        <name>Is_Active__c</name>
+    </fields>
+    <fields>
+        <help><!-- Number of days for which the license for this installation will be valid --></help>
+        <label><!-- License Days Remaining --></label>
+        <name>License_Days_Remaining__c</name>
+    </fields>
+    <fields>
+        <help><!-- Date on which the license for this installation expires --></help>
+        <label><!-- License Expiration Date --></label>
+        <name>License_Expiration_Date__c</name>
+    </fields>
+    <fields>
+        <help><!-- License record ID for the customer&apos;s license record in the LMA org --></help>
+        <label><!-- License Record ID --></label>
+        <name>License_Record_ID__c</name>
+    </fields>
+    <fields>
+        <help><!-- Denotes whether the license for this application expires or not --></help>
+        <label><!-- Never Expires? --></label>
+        <name>Never_Expires__c</name>
+    </fields>
+    <startsWith>Consonant</startsWith>
+</CustomObjectTranslation>

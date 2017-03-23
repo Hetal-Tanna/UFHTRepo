@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <caseValues>
+        <value>Test</value>
+    </caseValues>
+    <caseValues>
+        <plural>true</plural>
+        <value>Tests</value>
+    </caseValues>
+    <fields>
+        <label><!-- Autonumber --></label>
+        <name>Autonumber__c</name>
+    </fields>
+    <fields>
+        <label><!-- DateTime --></label>
+        <name>DateTime__c</name>
+    </fields>
+    <fields>
+        <label><!-- Contact --></label>
+        <name>Lookup__c</name>
+        <relationshipLabel><!-- Tests --></relationshipLabel>
+    </fields>
+    <fields>
+        <label><!-- checkbox --></label>
+        <name>checkbox__c</name>
+    </fields>
+    <fields>
+        <label><!-- currency --></label>
+        <name>currency__c</name>
+    </fields>
+    <fields>
+        <label><!-- encrypted text --></label>
+        <name>encrypted_text__c</name>
+    </fields>
+    <fields>
+        <label><!-- geolocation --></label>
+        <name>geolocation__c</name>
+    </fields>
+    <fields>
+        <label><!-- percent --></label>
+        <name>percent__c</name>
+    </fields>
+    <fields>
+        <label><!-- richtext area --></label>
+        <name>richtext_area__c</name>
+    </fields>
+    <fields>
+        <label><!-- url --></label>
+        <name>url__c</name>
+    </fields>
+    <layouts>
+        <layout>Test Layout</layout>
+        <sections>
+            <label><!-- Custom Links --></label>
+            <section>Custom Links</section>
+        </sections>
+    </layouts>
+    <startsWith>Consonant</startsWith>
+</CustomObjectTranslation>

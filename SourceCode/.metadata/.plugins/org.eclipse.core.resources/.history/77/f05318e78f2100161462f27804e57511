@@ -1,0 +1,68 @@
+<apex:page Controller="ViewDataController" cache="true" language="en-US"
+    readOnly="true" standardStylesheets="false" showHeader="false"
+    sidebar="false" contentType="application/x-pdf#{!selectedObject} Historical Data.pdf" applyHtmlTag="false"
+    applyBodyTag="false">
+    <html>
+    <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"  />
+    
+    <style type="text/css" media="print">
+    @page { 
+     
+      @top-center { 
+        content:element(header); 
+      }
+    
+      @bottom-left {
+            content: element(footer);
+      }
+        
+       @bottom-right {
+            content: "Page " counter(page) " of " counter(pages);
+            display:block;
+            font-size: 12px;
+       }
+       @PageBreak{
+        page-break:always;
+        page-break-inside:avoid;
+       }
+       
+    
+    }
+    div.header {
+        padding: 25px;
+        position: running(header);
+    }
+    
+    div.footer {
+        
+        padding: 5px;
+        position: running(footer);
+    }
+    
+    .pagenumber:before {
+        content: counter(page);
+    }
+    
+    .pagecount:before {
+        content: counter(pages);
+    }
+    
+    table {
+        page-break-inside:auto; 
+    }
+    tr    { 
+       page-break-inside:avoid; page-break-after:auto ;
+    }
+    thead { 
+        display:table-header-group 
+    }
+    div.content {
+            width: 100%;
+        }
+
+    </style>
+    </head>
+       <apex:include pageName="PdfContent"/>
+    </html>
+</apex:page>

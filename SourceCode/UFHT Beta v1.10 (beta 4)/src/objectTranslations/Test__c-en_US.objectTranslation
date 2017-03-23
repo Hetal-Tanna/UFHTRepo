@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <caseValues>
+        <plural>false</plural>
+        <value>Test</value>
+    </caseValues>
+    <caseValues>
+        <plural>true</plural>
+        <value>Tests</value>
+    </caseValues>
+    <fields>
+        <label><!-- Account --></label>
+        <name>Account__c</name>
+        <relationshipLabel><!-- Tests --></relationshipLabel>
+    </fields>
+    <fields>
+        <label><!-- Autonumber --></label>
+        <name>Autonumber__c</name>
+    </fields>
+    <fields>
+        <label><!-- Check_Encrypted_Working --></label>
+        <name>Check_Encrypted_Working__c</name>
+    </fields>
+    <fields>
+        <label><!-- DateTime --></label>
+        <name>DateTime__c</name>
+    </fields>
+    <fields>
+        <label><!-- Date field --></label>
+        <name>Date_field__c</name>
+    </fields>
+    <fields>
+        <label><!-- Contact --></label>
+        <name>Lookup__c</name>
+        <relationshipLabel><!-- Tests --></relationshipLabel>
+    </fields>
+    <fields>
+        <label><!-- Picklist Multi --></label>
+        <name>Picklist_Multi__c</name>
+        <picklistValues>
+            <masterLabel>Test, test1, test2</masterLabel>
+            <translation><!-- Test, test1, test2 --></translation>
+        </picklistValues>
+    </fields>
+    <fields>
+        <label><!-- SSN --></label>
+        <name>SSN__c</name>
+    </fields>
+    <fields>
+        <label><!-- Test_Formula --></label>
+        <name>Test_Formula__c</name>
+    </fields>
+    <fields>
+        <label><!-- checkbox --></label>
+        <name>checkbox__c</name>
+    </fields>
+    <fields>
+        <label><!-- credit card no --></label>
+        <name>credit_card_no__c</name>
+    </fields>
+    <fields>
+        <label><!-- currency --></label>
+        <name>currency__c</name>
+    </fields>
+    <fields>
+        <label><!-- email --></label>
+        <name>email__c</name>
+    </fields>
+    <fields>
+        <label><!-- encrypted text --></label>
+        <name>encrypted_text__c</name>
+    </fields>
+    <fields>
+        <label><!-- geolocation --></label>
+        <name>geolocation__c</name>
+    </fields>
+    <fields>
+        <label><!-- number --></label>
+        <name>number__c</name>
+    </fields>
+    <fields>
+        <label><!-- percent --></label>
+        <name>percent__c</name>
+    </fields>
+    <fields>
+        <label><!-- phone --></label>
+        <name>phone__c</name>
+    </fields>
+    <fields>
+        <label><!-- picklist --></label>
+        <name>picklist__c</name>
+        <picklistValues>
+            <masterLabel>test, test1</masterLabel>
+            <translation><!-- test, test1 --></translation>
+        </picklistValues>
+    </fields>
+    <fields>
+        <label><!-- pneumonoultramicroscopicsilicovolcanoco1 --></label>
+        <name>pneumonoultramicroscopicsilicovolcanoco1__c</name>
+    </fields>
+    <fields>
+        <label><!-- pneumonoultramicroscopicsilicovolcanoco2 --></label>
+        <name>pneumonoultramicroscopicsilicovolcanoco2__c</name>
+    </fields>
+    <fields>
+        <label><!-- pneumonoultramicroscopicsilicovolcanoco3 --></label>
+        <name>pneumonoultramicroscopicsilicovolcanoco3__c</name>
+    </fields>
+    <fields>
+        <label><!-- pneumonoultramicroscopicsilicovolcanoco4 --></label>
+        <name>pneumonoultramicroscopicsilicovolcanoco4__c</name>
+    </fields>
+    <fields>
+        <label><!-- pneumonoultramicroscopicsilicovolcanocon --></label>
+        <name>pneumonoultramicroscopicsilicovolcanocon__c</name>
+    </fields>
+    <fields>
+        <label><!-- richtext area --></label>
+        <name>richtext_area__c</name>
+    </fields>
+    <fields>
+        <label><!-- url --></label>
+        <name>url__c</name>
+    </fields>
+    <layouts>
+        <layout>Test Layout</layout>
+        <sections>
+            <label><!-- Custom Links --></label>
+            <section>Custom Links</section>
+        </sections>
+        <sections>
+            <label><!-- History Records --></label>
+            <section>History Records</section>
+        </sections>
+    </layouts>
+    <startsWith>Consonant</startsWith>
+</CustomObjectTranslation>

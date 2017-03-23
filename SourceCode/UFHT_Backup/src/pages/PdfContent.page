@@ -1,0 +1,54 @@
+<apex:page Controller="ViewDataController" cache="true" language="en-US"  readOnly="true" standardStylesheets="false"
+           showHeader="false"
+           sidebar="false"
+           renderAs="pdf"
+           applyHtmlTag="false"
+           applyBodyTag="false">
+    <html>
+    
+    <body>
+        <!--       page header content -->
+        <div>
+         
+        </div>
+        <div class="header">
+<!--              <div style="text-align: left;"> -->
+<!--              <apex:image url="{!$Resource.Company_Logo}" height="60px"/> -->
+<!--              </div> -->
+              <div style="font-family: arial; font-size: 13pt;text-align: center;">
+                <b>{!selectedObject} - Historical Data </b>
+             </div>
+        </div>
+       
+        <!--        page footer content  -->
+        <div class="footer" style="font-size: 11px">
+        {!$Label.Confidential_Label}, {!$Label.Exported_by_Label}: {!$User.FirstName} {!$User.LastName} on {!strDateTime}, {!$Label.Powered_by_Label}
+        </div>
+        <div class="content">
+            <table border="1" cellpadding="5" cellspacing="0" class="table" style="border-color:black;-fs-table-paginate: paginate;">
+                <thead
+                    style="background-color: #808080; font-family: arial; font-size: 11pt;">
+                    <tr>
+                        <th>Name</th>
+                        <th>Date</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Record ID</th>
+                    </tr>
+                </thead>
+                <apex:repeat value="{!filterHistoryWrapperList}" var="wrapper"> 
+                    <tr style="font-family: arial; font-size: 10pt;">
+                        <td>{!IdVsAccountNameMap[wrapper.parentId]}</td>
+                        <td>{!wrapper.historyWrapperObj.ModifiedDateTime}</td>
+                        <td style="white-space: nowrap">{!wrapper.historyWrapperObj.ModifiedByName}</td>
+                        <td>{!SUBSTITUTE(SUBSTITUTE(wrapper.historyWrapperObj.Action,'<b>',''),'</b>','')}
+                        </td>
+                        <td>{!wrapper.historyWrapperObj.parentID}</td>
+                    </tr>
+                </apex:repeat>
+            </table>
+        </div>
+    
+    </body>
+    </html>
+</apex:page>

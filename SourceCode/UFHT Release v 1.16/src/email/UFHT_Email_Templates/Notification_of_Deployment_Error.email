@@ -1,0 +1,9 @@
+Dear {!Ultra_Track_Container__c.OwnerFullName},<br/><br/>
+
+Field History Tracking has not been enabled on {!Ultra_Track_Container__c.Object_Label__c} because of following error: <br/>
+{!Ultra_Track_Container__c.Trigger_Deploy_Error__c} <br/>
+Source Org: {!Organization.Id} <br/><br/>
+
+Regards, <br/>
+Ultra FieldHistory Tracker Team<br/>
+Powered by: <a href='www.eternussolutions.com'>Eternus Solutions Pvt. Ltd.</a>

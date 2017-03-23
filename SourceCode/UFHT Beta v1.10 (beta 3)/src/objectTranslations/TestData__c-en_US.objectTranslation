@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <caseValues>
+        <plural>false</plural>
+        <value>TestData</value>
+    </caseValues>
+    <caseValues>
+        <plural>true</plural>
+        <value>TestDatas</value>
+    </caseValues>
+    <fields>
+        <label><!-- Account --></label>
+        <name>Accounts__c</name>
+        <relationshipLabel><!-- TestDatas --></relationshipLabel>
+    </fields>
+    <fields>
+        <label><!-- AutoNumber --></label>
+        <name>AutoNumber__c</name>
+    </fields>
+    <fields>
+        <label><!-- Checkbox --></label>
+        <name>Checkbox__c</name>
+    </fields>
+    <fields>
+        <label><!-- Currency --></label>
+        <name>Currency__c</name>
+    </fields>
+    <fields>
+        <label><!-- DateTime --></label>
+        <name>DateTime__c</name>
+    </fields>
+    <fields>
+        <label><!-- Email --></label>
+        <name>Email__c</name>
+    </fields>
+    <fields>
+        <label><!-- Formukla --></label>
+        <name>Formukla__c</name>
+    </fields>
+    <fields>
+        <label><!-- Geo --></label>
+        <name>Geo__c</name>
+    </fields>
+    <fields>
+        <label><!-- Long Text --></label>
+        <name>Long_Text__c</name>
+    </fields>
+    <fields>
+        <label><!-- Multi --></label>
+        <name>Multi__c</name>
+        <picklistValues>
+            <masterLabel>Bye</masterLabel>
+            <translation><!-- Bye --></translation>
+        </picklistValues>
+        <picklistValues>
+            <masterLabel>Hi</masterLabel>
+            <translation><!-- Hi --></translation>
+        </picklistValues>
+    </fields>
+    <fields>
+        <label><!-- Percent --></label>
+        <name>Percent__c</name>
+    </fields>
+    <fields>
+        <label><!-- Phone --></label>
+        <name>Phone__c</name>
+    </fields>
+    <fields>
+        <label><!-- Rich Text --></label>
+        <name>Rich_Text__c</name>
+    </fields>
+    <fields>
+        <label><!-- TestEncrypted --></label>
+        <name>TestEncrypted__c</name>
+    </fields>
+    <fields>
+        <label><!-- TestSelf --></label>
+        <name>TestSelf__c</name>
+        <relationshipLabel><!-- TestDatas --></relationshipLabel>
+    </fields>
+    <fields>
+        <label><!-- URL --></label>
+        <name>URL__c</name>
+    </fields>
+    <fields>
+        <label><!-- phone_plans --></label>
+        <name>phone_plans_del__c</name>
+        <relationshipLabel><!-- TestDatas --></relationshipLabel>
+    </fields>
+    <layouts>
+        <layout>TestData Layout</layout>
+        <sections>
+            <label><!-- Custom Links --></label>
+            <section>Custom Links</section>
+        </sections>
+    </layouts>
+    <startsWith>Consonant</startsWith>
+</CustomObjectTranslation>

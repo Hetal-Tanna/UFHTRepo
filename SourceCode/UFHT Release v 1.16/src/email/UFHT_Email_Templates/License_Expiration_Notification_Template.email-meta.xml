@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EmailTemplate xmlns="http://soap.sforce.com/2006/04/metadata">
+    <available>true</available>
+    <description>Email Template used for notifying the customer about upcoming license expiration</description>
+    <encodingKey>UTF-8</encodingKey>
+    <name>License Expiration Notification Template</name>
+    <style>none</style>
+    <subject>Ultra FieldHistory Tracker - Upcoming License Expiration Reminder</subject>
+    <textOnly>Ultra FieldHistory Tracker
+​
+Dear {!$User.Name},
+
+Your license for Ultra FieldHistory Tracker is about to expire in !DAYS! day(s). Please contact Eternus Sales Team for license renewal.
+
+Regards, 
+Ultra FieldHistory Tracker Team 
+Powered by: Eternus Solutions Pvt. Ltd.
+
+
+Disclaimer: This is an auto-generated mail. Please do not reply</textOnly>
+    <type>custom</type>
+</EmailTemplate>

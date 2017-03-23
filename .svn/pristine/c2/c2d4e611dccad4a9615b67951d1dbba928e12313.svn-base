@@ -1,0 +1,1020 @@
+/**
+  * @Class Name: UltraSetupControllerClone
+  * @Description: This is Controller class of visual force page "UltraSetup".
+  *               It saves and update the setting for sObjects to track the history of fields.
+  *               Display the triggerable object's list and their updateabale fields in row and column.
+  *               Implemented pagination for showing fields.
+  * ========================================================================================================================
+  *       Version   | Date        | Author             | Comments
+  * -------------------------------------------------------------------------------------------------------------------------
+  *       1.0       | 15/11/2015  | Eternus Solution   | 1.Created the class for above functionality
+  * ========================================================================================================================
+  **/
+
+public with sharing class UltraSetupControllerClone {
+
+    @TestVisible set<String> selectedFieldSet = new set<String>();
+
+    // Wrapper class list to hold all fields of selected object
+    //public list<UltraTrackWrapper> allFieldswrapperClassList;
+    public static list<UltraTrackWrapper> allFieldswrapperClassList;
+    // Holds the current salesforce instance base URL fetched from configObj / Configuration custom setting.
+    public String baseURL = UFHTConstants.EMPTY_STRING;
+    // Integer variable for holding page size for pagination
+    public Integer counter = 0;
+    // Wrapperclass list for to add elements into list of list.
+    public list<UltraTrackWrapper> wrapList = new list<UltraTrackWrapper>();
+    // To store how many number of columns to display the fields
+    public Integer numberOfColumns;
+    // To store how many fields per column to be displayed
+    public Integer numberOfFieldsPerColumns;
+    // Holds the list of fields to be tracked.
+    static Ultra_Track_Container__c ultraContainerObj;
+    // Wrapper class list to display fields on page
+    public list<UltraTrackWrapper> wrapperClassList = new list<UltraTrackWrapper>();
+    // Configuration class object for utilization
+    public ConfigurationController configObj { get; set; }
+    // Boolean variable to check object's all fields are selected or not
+    public Boolean isAllSelected { get; set; }
+    // Boolean variable to mak visible or invisible field section
+    //public Boolean isObject { get; set; }
+    public static Boolean isObject { get; set; }
+    // Boolean variable to mak visible or invisible field section
+    public Boolean isHTTPCalloutFail { get; set; }
+    // Boolean variable to check remote site settings present or not.
+    public static Boolean isRemoteSiteSettings { get; set; }
+    // List of list for display data dynamically in grid format
+    public list<list<UltraTrackWrapper>> lstWrapperClassList { get; set; }
+    // Holds the number of columns fetched from configObj / Configuration custom setting.
+    public Integer numberOfColumnsPicklistValue { get; set; }
+    // Holds the number of fields per column fetched from configObj / Configuration custom setting.
+    public Integer numberOfFieldsPerColumnsPicklistValue { get; set; }
+    // Holds the number of records per page fetched from configObj / Configuration custom setting.
+    public Integer numberOfRecordToDisplayPicklistValue { get; set; }
+    // Objects variable for holding selected object name
+    //public String objects { get; set; }
+    public static String objects { get; set; }
+    // To hold all editable sobject list
+    public list<String> objList { get; set; }
+    // Integer variable to hold current page number
+    public Integer pageNumber { get; set; }
+    // Integer variable to hold number fields to display on single page.
+    public Integer pageSize { get; set; }
+    // Holds the fields by which sorting is performed, fetched from configObj / Configuration custom setting.
+    public String sortFieldsValue { get; set; }
+    // Integer variable to hold total number of fields for sObject
+    public Integer totalSize { get; set; }
+    // Trigger deployment AsynResult Id
+    public static Id asynResultId;
+    // Variable is used to check if deployment is completed or not.
+    public static Boolean enablePollar {get; set;}
+    
+    public static Integer progressCounter {get; set;}
+    
+    public list<SelectOption> owdForStandardObject {get; set;}
+    
+    public static Boolean showOWDPicklistOrNot {get;set;}
+    public String selectedOWD {get; set;}
+    // Variable for storing serialized string value objects.
+    public String strOjects{get;set;}
+    // Variable for holding serialized string value fields.
+    public String strFields{get;set;}
+    public static set<String> objectNamesSet = new set<String>();
+    public static FieldsWithPicklistWrapper fieldsWithPicklistWrap {get;set;}
+    public static DeploymentStatusTriggerWrapper deploymentStatusTrigger {get;set;}
+    public static list<PageMessageWrapper> pageMessages {get;set;}
+
+   /** 
+     * @Author: Eternus Solutions
+     * @Description: Constructor to Configure the number of columns and number of fields per column to display
+     * @Param:
+     * @Return:
+     * @Date: 24/02/2016
+     **/
+    public UltraSetupControllerClone() {
+        isObject = false;
+        isAllSelected = false;
+        isHTTPCalloutFail = false; 
+        pageNumber = 0;
+        isRemoteSiteSettings = false;
+        enablePollar = false;
+        getConfigurationSettingData();
+        progressCounter = 0;
+        pageSize = numberOfFieldsPerColumns * numberOfColumns;
+        showOWDPicklistOrNot= false;
+        owdForStandardObject = new list<SelectOption> {new SelectOption('', '---NONE---'),
+                                                       new SelectOption('Private', 'Private'),
+                                                       new SelectOption('Read', 'Public Read Only'),
+                                                       new SelectOption('Edit', 'Public Read/Write')
+                                                      };
+
+        // Call the method to get all objects list
+        getObjectList();
+        configObj = new ConfigurationController();
+        allFieldswrapperClassList = new list<UltraTrackWrapper>();
+    }
+
+   /**
+     * @Author: Eternus Solutions
+     * @Description: Method to get configuration setting for displaying layout
+     * @Param:
+     * @Return:
+     * @Date: 6/05/2016
+     **/
+    public void getConfigurationSettingData() {
+    if(!UltraTrackUtility.isAllowDMLForCustomSetting('UFHT__Configuration__c','isAccessible')){
+      UltraTrackUtility.displayMessage(ApexPages.Severity.ERROR, System.Label.GenericError);
+          return;
+    }
+    map<String, Configuration__c> configurationMap = Configuration__c.getAll();
+        if(configurationMap.containsKey(System.Label.ConfigureColsAndFieldsCustomSettingRecordName)) {
+
+            Configuration__c configObj = configurationMap.get(System.Label.ConfigureColsAndFieldsCustomSettingRecordName);
+
+            setConfigurationSettingData(String.valueOf(configObj.Number_Of_Columns__c),
+                                        String.valueOf(configObj.Number_Of_Fields_Per_Column__c),
+                                        String.valueOf(configObj.Number_Of_Records_Per_Page__c),
+                                        configObj.Sort_Fields_By__c,
+                                        UFHTConstants.PROTOCOL + configObj.SalesforceBaseURL__c);
+        }
+        else {
+
+            setConfigurationSettingData(System.Label.DefaultNumberOfColumnValue,
+                                        System.Label.DefaultNumberOfFieldsPerColumnValue,
+                                        System.Label.DefaultNumberOfHistoryRecordsToDisplay,
+                                        System.Label.DefaultFieldSortingOption,
+                                        UFHTConstants.PROTOCOL + URL.getSalesforceBaseUrl().getHost());
+        }
+    }
+
+   /**
+     * @Author: Eternus Solutions
+     * @Description: Method to set values of configuration setting for displaying layout
+     * @Param: 1. numberOfColumn: Number of column need to be disply on setup page.
+     *         2. numberOfFieldsPerColumn: Number of fields per column to be disply on setup page.
+     *         3. numberOfRecordToDisplay: Number of record to be display on view data page.
+     *         4. sortFieldValue: Field sort order.
+     *         5. baseUrl: Base url.
+     * @Return:
+     * @Date: 21/07/2016
+     **/
+    @testvisible void setConfigurationSettingData(String numberOfColumn,
+                                     String numberOfFieldsPerColumn,
+                                     String numberOfRecordToDisplay,
+                                     String sortFieldValue,
+                                     String baseUrl) {
+
+        try {
+            numberOfColumns = numberOfColumnsPicklistValue = Integer.valueOf(numberOfColumn);
+        }
+        catch(Exception e) {
+            numberOfColumns = numberOfColumnsPicklistValue = 5;
+        }
+        try {
+            numberOfFieldsPerColumns = numberOfFieldsPerColumnsPicklistValue = Integer.valueOf(numberOfFieldsPerColumn);
+        }
+        catch(Exception e) {
+            numberOfFieldsPerColumns = numberOfFieldsPerColumnsPicklistValue = 10;
+        }
+        try {
+            numberOfRecordToDisplayPicklistValue = Integer.valueOf(numberOfRecordToDisplay);
+        }
+        catch(Exception e) {
+            numberOfRecordToDisplayPicklistValue = 25;
+        }
+        sortFieldsValue = String.isNotBlank(sortFieldValue) ? sortFieldValue : System.Label.DefaultFieldSortingOption;
+
+        this.baseURL = String.isNotBlank(baseUrl) ? baseUrl : URL.getSalesforceBaseUrl().toExternalForm();
+
+    }
+    /**
+     * @Author: Eternus Solutions
+     * @Description: Method to get the all triggerable and updateable objects from org
+     * @Param:
+     * @Return:
+     * @Date: 24/02/2016
+     **/
+    public void getObjectList() {
+
+        map<String, Object> responseMap = new map<String, Object>();
+        map<String, UFHT__RestrictedObjectForFieldTracking__c> restrictedObjectForFieldTrackingMap = new map<String, UFHT__RestrictedObjectForFieldTracking__c>();
+        objList = new list<String>();
+        isRemoteSiteSettings = false;
+        selectedOWD = '';
+
+        try {
+
+            Httprequest req = new HttpRequest();
+
+            req.setEndpoint(baseURL + UFHTConstants.SOBJECT_ENDPOINT);
+            req.setMethod(UFHTConstants.HTTP_GET_METHOD);
+            req.setHeader(UFHTConstants.HTTP_CONTENT_TYPE, UFHTConstants.HTTP_CONTENT_TYPE_JSON);
+            req.setHeader(UFHTConstants.HTTP_HEADER_AUTHORIZATION, UFHTConstants.HTTP_HEADER_AUTHORIZATION_BEARER + userInfo.getSessionId());
+
+            HttpResponse res = new HttpResponse ();
+            res = new Http().send(req);
+            
+            if(res.getStatusCode() == 200) {
+                responseMap = (map<String, Object>) JSON.deserializeUntyped(res.getBody());
+                map<String, Object> objectInformationMap;
+                
+                if(!responseMap.values().isEmpty()) {
+    
+                    list<object> sObjectList = (list<object>)responseMap.get(UFHTConstants.SOBJECTS);
+                    restrictedObjectForFieldTrackingMap = UFHT__RestrictedObjectForFieldTracking__c.getAll();
+                    if(sObjectList != null) {
+    
+                        for(object infoObj : sObjectList ) {
+    
+                            objectInformationMap = (map<String, Object>)infoObj;
+                            
+                            if(UFHTConstants.TRUE_KEYWORD.equalsIgnoreCase(String.valueOf(objectInformationMap.get(UFHTConstants.TRIGGERABLE))) &&
+                              UFHTConstants.TRUE_KEYWORD.equalsIgnoreCase(String.valueOf(objectInformationMap.get(UFHTConstants.UPDATEABLE))) &&
+                              !UFHTConstants.ATTACHMNET_API_NAME.equalsIgnoreCase(String.valueOf(objectInformationMap.get(UFHTConstants.SOBJECT_NAME))) &&
+                              (restrictedObjectForFieldTrackingMap != null && !restrictedObjectForFieldTrackingMap.containsKey(String.valueOF(objectInformationMap.get(UFHTConstants.SOBJECT_NAME)))
+                              )) {
+    
+                                objList.add(String.valueOf(objectInformationMap.get(UFHTConstants.SOBJECT_LABEL))
+                                       + UFHTConstants.WHITE_SPACE + UFHTConstants.BRACKET_OPEN
+                                       + String.valueOF(objectInformationMap.get(UFHTConstants.SOBJECT_NAME)) + UFHTConstants.BRACKET_CLOSE);
+                                system.debug('%%% objList'+objList);
+                                strOjects = JSON.serialize(objList);
+                                system.debug('%%% strOjects'+strOjects);
+                            }
+                        }
+                    }
+                }
+            }
+            else {
+                isHTTPCalloutFail = true;
+                system.debug('$$ falied'+isHTTPCalloutFail);
+                UltraTrackUtility.displayMessage(ApexPages.severity.ERROR, System.Label.Unable_to_Show_Setup_Page);
+                return;
+            }
+        }
+
+        catch(System.CalloutException e) {
+
+            if(e.getMessage().contains(UFHTConstants.UNAUTHORIZED_ENDPOINT)) {
+                isRemoteSiteSettings = true;
+            }
+            else {
+                UltraTrackUtility.displayMessage(ApexPages.severity.ERROR, e.getMessage());
+            }
+        }
+
+        catch(System.JSONException e) {
+            if(Limits.getCallouts() >= Limits.getLimitCallouts()) {
+                UltraTrackUtility.displayMessage(ApexPages.severity.ERROR, System.Label.JSON_Error);
+            }
+        }
+    }
+    
+    /**
+     * @Author: Eternus Solutions
+     * @Description: Method to get selected object's all editable field's label with isSelected status.
+     * @Param:
+     * @Return:
+     * @Date: 15/11/2015
+     **/
+     @RemoteAction 
+    public static FieldsWithPicklistWrapper getFieldsList(String objectName) {
+    	map<String,String> mapSeverity = new map<String,String>();
+        objects = objectName;
+        system.debug('%%% indie'+objects);
+        //objects = 'Account (Account)';
+    //public void getFieldsList() {
+        allFieldswrapperClassList = new list<UltraTrackWrapper>();
+        if(String.isNotBlank(objects)) {
+            objects = objects.trim();
+            map<String, String> fieldsAndLabelsMap = new map<String, String>();
+            map<String, UFHT__Standard_Objects_Having_OWD__c> standardObjectsHavingOWDMap;
+            set<String> selectedFieldsSet = new set<String>();
+            set<String> selectedToggleFieldsSet = new set<String>();
+            
+            isObject = UltraTrackUtility.sobjectMap.containsKey(
+                       objects.substringAfterLast(UFHTConstants.BRACKET_OPEN).remove(UFHTConstants.BRACKET_CLOSE));
+            system.debug('%%% isObject'+isObject);
+            if( !isObject ) {
+                UltraTrackUtility.displayMessage(ApexPages.severity.WARNING, UFHTConstants.WHITE_SPACE + System.Label.Object_Not_Found);
+                return null;
+            }
+            
+            fieldsAndLabelsMap = UltraTrackUtility.getFieldNamesAndLabels(
+                objects.substringAfterLast(UFHTConstants.BRACKET_OPEN).remove(UFHTConstants.BRACKET_CLOSE)
+            );
+            system.debug('%%% fieldsAndLabelsMap'+fieldsAndLabelsMap);
+            isObject = (fieldsAndLabelsMap!= null && !fieldsAndLabelsMap.values().isEmpty());
+            
+            if( !isObject ) {
+                UltraTrackUtility.displayMessage(ApexPages.severity.WARNING, UFHTConstants.WHITE_SPACE + 
+                                                 System.Label.No_Updatable_Fields_Found.replace(
+                                                 '<obj name>', 
+                                                 objects.subStringBefore(UFHTConstants.WHITE_SPACE + UFHTConstants.BRACKET_OPEN)
+                                                 ));
+                return null;
+            }
+            
+      //Check whether the user has access for read access for Ultra Track Container
+        if(!UltraTrackUtility.checkObjectAndFieldLevelSecurity('UFHT__Ultra_Track_Container__c', 
+                                 new list<String> {'Id','UFHT__Object_Name__c','UFHT__Tracked_Fields__c','UFHT__Is_Tracking_Enabled__c'},
+                                 'isAccessible')){
+        UltraTrackUtility.displayMessage(ApexPages.severity.WARNING, UFHTConstants.WHITE_SPACE + System.Label.GenericError);
+        return null;
+      
+      }        
+            try {
+                ultraContainerObj = [SELECT Id,
+                                          Object_Name__c,
+                                          Tracked_Fields__c,
+                                          Is_Tracking_Enabled__c,
+                                          Severity_of_Tracked_fields__c,
+                                          OWD_for_an_Object__c
+                                     FROM Ultra_Track_Container__c
+                                     WHERE Object_Name__c = : objects.substringAfterLast(UFHTConstants.BRACKET_OPEN).remove(UFHTConstants.BRACKET_CLOSE)
+                                     LIMIT 1];
+              if( ultraContainerObj.Severity_of_Tracked_fields__c != null) {
+	              system.debug('%%% ultraContainerObj'+ultraContainerObj);
+	              String resultedSeverity = ultraContainerObj.Severity_of_Tracked_fields__c;
+	              system.debug('%%% resultedSeverity'+resultedSeverity);
+	              list<String> lstString = resultedSeverity.split(',');
+	              system.debug('%%% lstString'+lstString);
+	              for(String objString : lstString) {
+	              	mapSeverity.put(objString.substringBefore(':'),objString.substringAfter(':'));
+	              }
+	              system.debug('%%% mapSeverity'+mapSeverity);
+              }
+            }
+            catch(QueryException ex) {
+            ultraContainerObj = null;
+            }
+            if(ultraContainerObj != null && String.isNotBlank(ultraContainerObj.Tracked_Fields__c) ) {
+                selectedFieldsSet = new Set<String>(ultraContainerObj.Tracked_Fields__c.split(UFHTConstants.COMMA));
+                system.debug('%%% selectedFieldsSet'+selectedFieldsSet);
+            }
+            if(ultraContainerObj != null && String.isNotBlank(ultraContainerObj.Severity_of_Tracked_fields__c) ) {
+                selectedToggleFieldsSet = new Set<String>(ultraContainerObj.Severity_of_Tracked_fields__c.split(UFHTConstants.COMMA));
+                system.debug('%%% selectedToggleFieldsSet'+selectedToggleFieldsSet);
+            }
+            for(String field : fieldsAndLabelsMap.keySet()) {
+                if(selectedFieldsSet.contains(field)) {
+                	if(mapSeverity.get(field) == '1') {
+                		allFieldswrapperClassList.add(new UltraTrackWrapper(field,
+                                                        fieldsAndLabelsMap.get(field),
+                                                        true,true));
+                	} else {
+                		allFieldswrapperClassList.add(new UltraTrackWrapper(field,
+                                                        fieldsAndLabelsMap.get(field),
+                                                        true,false));
+                	}
+                   system.debug('%%% allFieldswrapperClassList'+allFieldswrapperClassList);
+                	 //}
+                }
+                else {
+                    allFieldswrapperClassList.add(new UltraTrackWrapper(field,
+                                                        fieldsAndLabelsMap.get(field),
+                                                        false,false));
+                }
+                system.debug('%%% allFieldswrapperClassList'+allFieldswrapperClassList);
+            }
+            if( !allFieldswrapperClassList.isEmpty() ) {
+                allFieldswrapperClassList.sort();
+            }
+            if(isObject) {
+                system.debug('FFFFF-----:'+isObject);
+                
+                standardObjectsHavingOWDMap = UFHT__Standard_Objects_Having_OWD__c.getAll();
+                system.debug('FFFFF-----:'+standardObjectsHavingOWDMap.containsKey(objects.substringAfterLast(UFHTConstants.BRACKET_OPEN).remove(UFHTConstants.BRACKET_CLOSE)));
+                showOWDPicklistOrNot = standardObjectsHavingOWDMap.containsKey(objects.substringAfterLast(UFHTConstants.BRACKET_OPEN).remove(UFHTConstants.BRACKET_CLOSE)) ?
+                                       true :
+                                       false;
+                system.debug('FFFFF-----:'+showOWDPicklistOrNot);
+            }
+        }
+        fieldsWithPicklistWrap = new FieldsWithPicklistWrapper(allFieldswrapperClassList,showOWDPicklistOrNot,ultraContainerObj);
+        system.debug('fieldsWithPicklistWrap-----:'+fieldsWithPicklistWrap);
+        return fieldsWithPicklistWrap;
+    }
+
+    /**
+     * @Author: Eternus Solutions
+     * @Description: 1.Method to find all selected fields for selected sObject.
+     *               2.this method calls the saveSetting and updateSetting methods for saving the setting.
+     * @Param:
+     * @Return:
+     * @Date: 15/11/2015
+     **/
+     @RemoteAction 
+    public static DeploymentStatusTriggerWrapper selectedFieldsName (String objectName,list<String> allObjects,list<String> selectedFields,
+                                           String strOWDValue, Ultra_Track_Container__c ultraContainerObject,String FieldNameToggleValue) {
+        system.debug('%% FieldNameToggleValue'+FieldNameToggleValue);
+        pageMessages = new list<PageMessageWrapper>();
+        isObject = false;
+        getFieldsList(objectName);
+        if (ultraContainerObject == null && ultraContainerObj != null) {
+            ultraContainerObject = ultraContainerObj;
+        }
+        objectNamesSet.addAll(allObjects);
+        //Object contains check for triggerrable object
+        if( !objectNamesSet.contains(objectName)) {
+            UltraTrackUtility.displayMessage(ApexPages.severity.WARNING, UFHTConstants.WHITE_SPACE + System.Label.Object_Not_Found);
+            pageMessages.add(new PageMessageWrapper(UFHTConstants.WHITE_SPACE + System.Label.Object_Not_Found,'Warning'));
+            deploymentStatusTrigger = new DeploymentStatusTriggerWrapper(enablePollar,progressCounter,asynResultId,pageMessages);
+            return deploymentStatusTrigger;
+        }
+        
+        if(!UltraTrackUtility.checkObjectAndFieldLevelSecurity('Profile', 
+                                     new list<String> {'Id','Name','PermissionsAuthorApex'},
+                                     'isAccessible')){
+          UltraTrackUtility.displayMessage(ApexPages.severity.WARNING, UFHTConstants.WHITE_SPACE + System.Label.UnAuthorizedTriggerAccess);
+          pageMessages.add(new PageMessageWrapper(UFHTConstants.WHITE_SPACE + System.Label.UnAuthorizedTriggerAccess,'Warning'));
+          deploymentStatusTrigger = new DeploymentStatusTriggerWrapper(enablePollar,progressCounter,asynResultId,pageMessages);
+          return deploymentStatusTrigger;
+        }
+
+        Boolean authorApexCheck =[SELECT Id,Name,PermissionsAuthorApex  
+                  FROM Profile 
+                  WHERE Id=:UserInfo.getProfileId()].PermissionsAuthorApex ;                           
+        //Check whether the user has access for read and create trigger for new setup details
+        if(!authorApexCheck){
+          UltraTrackUtility.displayMessage(ApexPages.severity.WARNING, UFHTConstants.WHITE_SPACE + System.Label.UnAuthorizedTriggerAccess);
+          pageMessages.add(new PageMessageWrapper(UFHTConstants.WHITE_SPACE + System.Label.UnAuthorizedTriggerAccess,'Warning'));
+          deploymentStatusTrigger = new DeploymentStatusTriggerWrapper(enablePollar,progressCounter,asynResultId,pageMessages);
+          return deploymentStatusTrigger;
+        }
+
+        if(ultraContainerObject != null && objectNamesSet.contains(objectName)) {
+           deploymentStatusTrigger = updateSetting(selectedFields,strOWDValue,ultraContainerObject,objectName,FieldNameToggleValue);
+            system.debug('%%% deploymentStatusTrigger'+deploymentStatusTrigger);
+        }
+
+        else {
+            deploymentStatusTrigger = saveSetting(selectedFields,strOWDValue,ultraContainerObject,objectName,FieldNameToggleValue);
+            system.debug('@@@ deploymentStatusTrigger'+deploymentStatusTrigger);
+        }
+        
+        if(isObject) {
+            objectNamesSet.add(objectName);
+        }
+        //deploymentStatusTrigger = new DeploymentStatusTriggerWrapper(enablePollar,progressCounter,asynResultId,pageMessages);
+        return deploymentStatusTrigger;
+    }
+
+
+    /**
+     * @Author: Eternus Solutions
+     * @Description: 1. Method to Save the setting into custom object for
+     *                  respected object's respected fields
+     * @Param: set of string which holds the name of fields.
+     * @Return:
+     * @Date: 15/11/2015
+     **/
+    public static DeploymentStatusTriggerWrapper saveSetting(list<String> selectedFieldSet,String selectedOWD,
+                                      Ultra_Track_Container__c ultraContainerObject, String objectName,String FieldNameToggleValue) {
+        enablePollar = false;
+        if(selectedFieldSet == null) {
+            return null;
+        }
+
+        try {
+            if(ultraContainerObject == null && !selectedFieldSet.isEmpty() && String.isNotBlank(objectName)) {
+    
+                list<Ultra_Track_Container__c> saveSettingList = new list<Ultra_Track_Container__c>();
+                String commaSeprated = getCommaSepratedFields(selectedFieldSet);
+    
+                if(UltraTrackUtility.checkObjectAndFieldLevelSecurity('UFHT__Ultra_Track_Container__c',
+                                                                      new list<String> {'UFHT__Object_Name__c', 'UFHT__Object_Label__c',
+                                                                      'UFHT__Tracked_Fields__c', 'UFHT__Is_Tracking_Enabled__c'},
+                                                                      'isInsert')) {
+                                                                        
+                    // Method to check if trigger for selected object is present or not, if not deploy trigger for the same.
+                    asynResultId = DynamicTriggerGenerator.generateDynamicTrigger(objectName.substringAfterLast(UFHTConstants.BRACKET_OPEN).remove(UFHTConstants.BRACKET_CLOSE), UserInfo.getSessionId());
+                    if(asynResultId != null) {
+                        progressCounter = 25;
+                        enablePollar = true;
+                    }
+                    else {
+                        progressCounter = 50;
+                    }
+                    saveSettingList.add(new Ultra_Track_Container__c(
+                        Object_Name__c = objectName.substringAfterLast(UFHTConstants.BRACKET_OPEN).remove(UFHTConstants.BRACKET_CLOSE),
+                        Object_Label__c = objectName,
+                        Tracked_Fields__c = commaSeprated,
+                        //Severity_of_Tracked_fields__c = FieldNameToggleValue,
+                        Is_Tracking_Enabled__c = true,
+                        OWD_for_an_Object__c = selectedOWD
+                    ));
+
+                    // insert saveSettingList contains 1 record;
+                    for(Database.SaveResult saveRes : Database.insert(saveSettingList, false)) {
+                        if (saveRes.isSuccess()) {
+                            isObject = true;
+                            if(asynResultId == null) {
+                                UltraTrackUtility.displayMessage(
+                                                    ApexPages.severity.Confirm, UFHTConstants.WHITE_SPACE
+                                                    + System.Label.Ultra_Track_Container_Save_Message1
+                                                    + UFHTConstants.WHITE_SPACE + objectName.subStringBefore(UFHTConstants.WHITE_SPACE + UFHTConstants.BRACKET_OPEN)
+                                                    + UFHTConstants.WHITE_SPACE + System.Label.Ultra_Track_Container_Save_Message2 );
+                               pageMessages.add(new PageMessageWrapper(UFHTConstants.WHITE_SPACE
+                                                    + System.Label.Ultra_Track_Container_Save_Message1
+                                                    + UFHTConstants.WHITE_SPACE + objectName.subStringBefore(UFHTConstants.WHITE_SPACE + UFHTConstants.BRACKET_OPEN)
+                                                    + UFHTConstants.WHITE_SPACE + System.Label.Ultra_Track_Container_Save_Message2,'Confirm'));
+                              deploymentStatusTrigger = new DeploymentStatusTriggerWrapper(enablePollar,progressCounter,asynResultId,pageMessages);
+                              return deploymentStatusTrigger;
+                            }
+                        } 
+                        else {
+                            UltraTrackUtility.displayMessage(ApexPages.Severity.ERROR, System.Label.GenericError);
+                            pageMessages.add(new PageMessageWrapper(UFHTConstants.WHITE_SPACE
+                                                    + System.Label.Ultra_Track_Container_Save_Message1
+                                                    + UFHTConstants.WHITE_SPACE + objectName.subStringBefore(UFHTConstants.WHITE_SPACE + UFHTConstants.BRACKET_OPEN)
+                                                    + UFHTConstants.WHITE_SPACE + System.Label.Ultra_Track_Container_Save_Message2,'Error'));
+                            deploymentStatusTrigger = new DeploymentStatusTriggerWrapper(enablePollar,progressCounter,asynResultId,pageMessages);
+                            return deploymentStatusTrigger;
+                        }
+                    }
+                } 
+                else{
+                     UltraTrackUtility.displayMessage(ApexPages.Severity.ERROR, System.Label.GenericError);
+                      pageMessages.add(new PageMessageWrapper(System.Label.GenericError,'Error'));
+                      deploymentStatusTrigger = new DeploymentStatusTriggerWrapper(enablePollar,progressCounter,asynResultId,pageMessages);
+                      return deploymentStatusTrigger;
+                }
+            }
+            else {
+                UltraTrackUtility.displayMessage(ApexPages.severity.WARNING, System.Label.Field_Not_Selected);
+                pageMessages.add(new PageMessageWrapper(System.Label.Field_Not_Selected,'Warning'));
+                deploymentStatusTrigger = new DeploymentStatusTriggerWrapper(enablePollar,progressCounter,asynResultId,pageMessages);
+                return deploymentStatusTrigger;
+            }
+        }
+        catch(System.CalloutException e) {
+
+            if(e.getMessage().contains(UFHTConstants.UNAUTHORIZED_ENDPOINT)) {
+                isRemoteSiteSettings = true;
+            }
+            else {
+                UltraTrackUtility.displayMessage(ApexPages.severity.ERROR, e.getMessage());
+                pageMessages.add(new PageMessageWrapper(e.getMessage(),'Error'));
+                deploymentStatusTrigger = new DeploymentStatusTriggerWrapper(enablePollar,progressCounter,asynResultId,pageMessages);
+                return deploymentStatusTrigger;
+                
+            }
+        }
+        deploymentStatusTrigger = new DeploymentStatusTriggerWrapper(enablePollar,progressCounter,asynResultId,pageMessages);
+        return deploymentStatusTrigger;
+    }
+
+    /**
+     * @Author: Eternus Solutions
+     * @description: 1.Method to update the setting of sObject and their fields
+     * @Param: Set of string which holds the name of fields.
+     * @Return:
+     * @Date: 15/11/2015
+     **/
+     public static DeploymentStatusTriggerWrapper updateSetting(list<String> selectedFieldSet,String selectedOWD,
+                                      Ultra_Track_Container__c ultraContainerObject, String objectName,String FieldNameToggleValue) {
+        system.debug('FieldNameToggleValue----:'+FieldNameToggleValue);
+        system.debug('DDDDDd----:'+selectedOWD);
+        system.debug('selectedFieldSet----:'+selectedFieldSet);
+        system.debug('ultraContainerObject----:'+ultraContainerObject);
+        system.debug('objectName----:'+objectName);
+        enablePollar = false;
+        if(selectedFieldSet == null) {
+            return null;
+        }
+
+        String fieldvalue = UFHTConstants.EMPTY_STRING;
+        system.debug('fieldvalue----:'+fieldvalue);
+        try {
+            if(ultraContainerObject != null) {
+                if(!selectedFieldSet.isEmpty()) {
+                    fieldvalue = getCommaSepratedFields(selectedFieldSet);
+                    system.debug('fieldvalue----:'+fieldvalue);
+                }
+    
+                if(String.isBlank(fieldvalue) && String.isBlank(ultraContainerObject.UFHT__Tracked_Fields__c)) {
+                    UltraTrackUtility.displayMessage(ApexPages.severity.WARNING, System.Label.Field_Not_Selected);
+                    pageMessages.add(new PageMessageWrapper(System.Label.Field_Not_Selected,'Warning'));
+                    deploymentStatusTrigger = new DeploymentStatusTriggerWrapper(enablePollar,progressCounter,asynResultId,pageMessages);
+                    return deploymentStatusTrigger;
+                }
+    
+                if(UltraTrackUtility.checkObjectAndFieldLevelSecurity('UFHT__Ultra_Track_Container__c',
+                                                                      new list<String> {'UFHT__Tracked_Fields__c', 'UFHT__Is_Tracking_Enabled__c'},
+                                                                      'isUpdate')){
+                    system.debug('DDDDDd----:'+selectedOWD);
+                    ultraContainerObject.Is_Tracking_Enabled__c = (String.isBlank(fieldvalue)) ? false : true;
+                    
+                    
+                    ultraContainerObject.Tracked_Fields__c = (ultraContainerObject.Tracked_Fields__c == null)
+                                                         ? UFHTConstants.EMPTY_STRING
+                                                         : ultraContainerObject.Tracked_Fields__c;
+                                                         
+                    system.debug('Tracked Fields'+ultraContainerObject.Tracked_Fields__c);
+                    
+                    ultraContainerObject.Severity_of_Tracked_fields__c = (ultraContainerObject.Severity_of_Tracked_fields__c == null)
+                                                         ? UFHTConstants.EMPTY_STRING
+                                                         : ultraContainerObject.Severity_of_Tracked_fields__c;
+                    system.debug('Tracked Fields'+ultraContainerObject.Severity_of_Tracked_fields__c);
+                    
+                    // Method to check if trigger for selected object is present or not, if not deploy trigger for the same.
+                    asynResultId = DynamicTriggerGenerator.generateDynamicTrigger(objectName.substringAfterLast(UFHTConstants.BRACKET_OPEN).remove(UFHTConstants.BRACKET_CLOSE), UserInfo.getSessionId());
+                    system.debug('asynResultId:: '+asynResultId);
+                    if((ultraContainerObject.Tracked_Fields__c != fieldvalue) || 
+                       (ultraContainerObject.Tracked_Fields__c == fieldvalue && asynResultId != null) ||
+                        ultraContainerObject.OWD_for_an_Object__c != selectedOWD) {
+                        	
+                        ultraContainerObject.Tracked_Fields__c = fieldvalue;
+                        ultraContainerObject.OWD_for_an_Object__c = selectedOWD;
+                        ultraContainerObject.Severity_of_Tracked_fields__c = FieldNameToggleValue;
+                        system.debug('!!! Tracked Fields'+ultraContainerObject.Severity_of_Tracked_fields__c);
+                        //ultraContainerObject.AsynResult_Id__c = asynResultId;
+                        if(asynResultId != null) {
+                            progressCounter = 25;
+                            enablePollar = true;
+                        }
+                        // Update ultraContainerObject which contains 1 record
+                        Database.SaveResult saveRes  = Database.update(ultraContainerObject, false);
+                        system.debug('saveRes: '+saveRes);
+                        if(asynResultId == null) {
+                            if (saveRes.isSuccess()) {
+                                system.debug('saveRes: '+saveRes);
+                                progressCounter = 100;
+                                system.debug('progressCounter: '+progressCounter);
+                                UltraTrackUtility.displayMessage(
+                                                    ApexPages.severity.Confirm, UFHTConstants.WHITE_SPACE
+                                                    + System.Label.Ultra_Track_Container_Save_Message1
+                                                    + UFHTConstants.WHITE_SPACE + objectName.subStringBefore(UFHTConstants.WHITE_SPACE + UFHTConstants.BRACKET_OPEN)
+                                                    + UFHTConstants.WHITE_SPACE + System.Label.Ultra_Track_Container_Save_Message2 );
+                                 pageMessages.add(new PageMessageWrapper(UFHTConstants.WHITE_SPACE
+                                                    + System.Label.Ultra_Track_Container_Save_Message1
+                                                    + UFHTConstants.WHITE_SPACE + objectName.subStringBefore(UFHTConstants.WHITE_SPACE + UFHTConstants.BRACKET_OPEN)
+                                                    + UFHTConstants.WHITE_SPACE + System.Label.Ultra_Track_Container_Save_Message2,'Confirm'));
+                                 deploymentStatusTrigger = new DeploymentStatusTriggerWrapper(enablePollar,progressCounter,asynResultId,pageMessages);
+                                 return deploymentStatusTrigger;
+                               // isObject = true;
+                            }
+                            else {
+                                   
+                                   UltraTrackUtility.displayMessage(ApexPages.severity.WARNING,
+                                                                          System.Label.Settings_Save_Error);
+                                   pageMessages.add(new PageMessageWrapper(System.Label.Settings_Save_Error,'Warning'));
+                                   deploymentStatusTrigger = new DeploymentStatusTriggerWrapper(enablePollar,progressCounter,asynResultId,pageMessages);
+                                   return deploymentStatusTrigger;
+                            }
+                        }
+                    }
+                    else {
+                        UltraTrackUtility.displayMessage(
+                        ApexPages.severity.Confirm,
+                        System.Label.Ultra_Track_Container_Save_Message1 + UFHTConstants.WHITE_SPACE
+                        + objectName.subStringBefore(UFHTConstants.WHITE_SPACE + UFHTConstants.BRACKET_OPEN) + UFHTConstants.WHITE_SPACE
+                        + System.Label.Ultra_Track_Container_Save_Message2 );
+                        pageMessages.add(new PageMessageWrapper(System.Label.Ultra_Track_Container_Save_Message1 + UFHTConstants.WHITE_SPACE
+                        + objectName.subStringBefore(UFHTConstants.WHITE_SPACE + UFHTConstants.BRACKET_OPEN) + UFHTConstants.WHITE_SPACE
+                        + System.Label.Ultra_Track_Container_Save_Message2,'Confirm'));
+                        deploymentStatusTrigger = new DeploymentStatusTriggerWrapper(enablePollar,progressCounter,asynResultId,pageMessages);
+                        return deploymentStatusTrigger;
+                    }
+                }
+                else {
+                    UltraTrackUtility.displayMessage(ApexPages.Severity.ERROR, System.Label.GenericError);
+                    pageMessages.add(new PageMessageWrapper(System.Label.GenericError,'Error'));
+                    deploymentStatusTrigger = new DeploymentStatusTriggerWrapper(enablePollar,progressCounter,asynResultId,pageMessages);
+                    return deploymentStatusTrigger;
+                }
+            }
+        }
+        
+        catch(System.CalloutException e) {
+    
+            if(e.getMessage().contains(UFHTConstants.UNAUTHORIZED_ENDPOINT)) {
+                isRemoteSiteSettings = true;
+            }
+            else {
+                UltraTrackUtility.displayMessage(ApexPages.severity.ERROR, e.getMessage());
+                pageMessages.add(new PageMessageWrapper(e.getMessage(),'Error'));
+                deploymentStatusTrigger = new DeploymentStatusTriggerWrapper(enablePollar,progressCounter,asynResultId,pageMessages);
+                return deploymentStatusTrigger;
+            }
+        }
+        deploymentStatusTrigger = new DeploymentStatusTriggerWrapper(enablePollar,progressCounter,asynResultId,pageMessages);
+        return deploymentStatusTrigger;
+    }
+
+    /**
+     * @Author: Eternus Solutions
+     * @Description: 1.Method to create the comma Seprated string from set of selectedFields
+     * @Param: Set of string which holds the name of fields.
+     * @Return: Comma separated string
+     * @Date: 15/11/2015
+     **/
+    public static String getCommaSepratedFields(list<String> selectedFieldsSet) {
+        if(selectedFieldsSet == null) {
+            return UFHTConstants.EMPTY_STRING;
+        }
+
+        String commaSeprated = UFHTConstants.EMPTY_STRING;
+
+        for(String selectedField : selectedFieldsSet) {
+            commaSeprated += selectedField + UFHTConstants.COMMA ;
+        }
+
+        commaSeprated = String.isNotBlank(commaSeprated) ?
+                        commaSeprated.subString(0, commaSeprated.length() - 1):
+                        commaSeprated ;
+        return commaSeprated;
+     }
+     
+     public static String getCommaSepratedFields(set<String> selectedToggleFieldsSet) {
+        if(selectedToggleFieldsSet == null) {
+            return UFHTConstants.EMPTY_STRING;
+        }
+
+        String commaSeprated = UFHTConstants.EMPTY_STRING;
+
+        for(String selectedField : selectedToggleFieldsSet) {
+            commaSeprated += selectedField + UFHTConstants.COMMA ;
+        }
+
+        commaSeprated = String.isNotBlank(commaSeprated) ?
+                        commaSeprated.subString(0, commaSeprated.length() - 1):
+                        commaSeprated ;
+        return commaSeprated;
+     }
+
+   /**
+     * @Author: Eternus Solutions
+     * @Description: Update the changes made to the Configuration custom setting record.
+     * @Param:
+     * @Return:
+     * @Date: 15/11/2015
+     **/
+    public pageReference saveAndUpdateConfigurationSetting(){
+
+        showOWDPicklistOrNot = false;
+        configObj.numberOfColumns = numberOfColumnsPicklistValue;
+        configObj.numberOfFieldsPerColumns = numberOfFieldsPerColumnsPicklistValue;
+        configObj.sortFieldsBy = sortFieldsValue;
+        configObj.numberOfHistoryRecords = numberOfRecordToDisplayPicklistValue;
+        configObj.saveConfiguration();
+        
+        getConfigurationSettingData();
+    
+        pageSize = Integer.valueOf(numberOfFieldsPerColumns) * Integer.valueOf(numberOfColumns);
+        configObj = new ConfigurationController();
+        
+        if(!allFieldswrapperClassList.isEmpty()){
+            allFieldswrapperClassList.sort();
+            //first();
+        }
+        
+        return null;
+    }
+    
+    /**
+      * @Author: Eternus Solutions
+      * @Description: Method to check if status of trigger deployment. 
+      * @Param: NA
+      * @Return: NA
+      * @Date: 15/11/2015
+      **/
+   @RemoteAction 
+    public static DeploymentStatusTriggerWrapper checkTriggerDeploymentStatus(Id asyncId,Boolean isEnablePoller,
+                                                    Integer progCounter,String objectName,String selectedOWD) {
+        //list<ErrorMessageWrapper> errorMessage = new list<ErrorMessageWrapper>();
+        Integer resultedProgressCounter;
+        system.debug('$$$ asyncId'+asyncId);
+        system.debug('$$$ isEnablePoller'+isEnablePoller);
+        system.debug('$$$ progCounter'+progCounter);
+        system.debug('$$@@ objectName'+objectName);
+        system.debug('$$@@ selectedOWD'+selectedOWD);
+        if(asyncId != null) {
+            MetadataService.MetadataPort service = new MetadataService.MetadataPort();
+            service.SessionHeader = new MetadataService.SessionHeader_element();
+            service.SessionHeader.sessionId = UserInfo.getSessionId();
+            if(!Test.isRunningTest()) {
+                system.debug('$$@@ inside if');
+                MetadataService.DeployResult deployResult = service.checkDeployStatus(asyncId, true);
+                deploymentStatusTrigger = deployStatusHelper(deployResult.done, deployResult,isEnablePoller,progCounter, objectName,selectedOWD);
+            }
+            else {
+                system.debug('$$@@ inside else');
+                deploymentStatusTrigger= deployStatusHelper(true, null,isEnablePoller,progCounter, objectName,selectedOWD);
+            }
+        } 
+        return deploymentStatusTrigger;
+    }
+    
+    /**
+      * @Author: Eternus Solutions
+      * @Description: Helper method to check status of trigger deployment.
+      * @Param: Boolean deployResultStatus: Deployment status
+      *         MetadataService.DeployResult deployResult: Object of DeployResult
+      * @Return: NA
+      * @Date: 15/11/2015
+      **/
+    public static DeploymentStatusTriggerWrapper deployStatusHelper(Boolean deployResultStatus, MetadataService.DeployResult deployResult, 
+                                     Boolean isEnablePoller,Integer progressCount, String objectName,String selectedOWD){
+        pageMessages = new list<PageMessageWrapper>();
+        Boolean isDeployed;
+        String deploymentErrorMessage;
+        String objectPrefix;
+        String objectCreateNewRecordUrl;
+        String deploymentCreateRecordErrorMsg;
+        progressCounter = progressCount;
+        enablePollar = isEnablePoller;
+        objects = objectName;
+        system.debug('%% progressCounter'+progressCounter);
+        system.debug('%% enablePollar'+enablePollar);
+        system.debug('%% objects'+objects);
+        String objectApiName = objects.substringAfterLast(UFHTConstants.BRACKET_OPEN).remove(UFHTConstants.BRACKET_CLOSE);
+        system.debug('%% objectApiName'+objectApiName);
+        map <String, UFHT__ObjectNotProvidedToCreateRecord__c> objectTonotProvideCreateRecordMap = new Map<String, UFHT__ObjectNotProvidedToCreateRecord__c> ();
+        if(progressCounter == 100){
+            enablePollar = false;
+        }
+        
+        if(deployResultStatus) {
+            system.debug('%% deployResultStatus'+deployResultStatus);
+            deploymentErrorMessage = '';
+            objectTonotProvideCreateRecordMap = UFHT__ObjectNotProvidedToCreateRecord__c.getAll();
+            system.debug('%% objectTonotProvideCreateRecordMap'+objectTonotProvideCreateRecordMap);
+            progressCounter = 100;
+            if(deployResult != null && deployResult.details != null && deployResult.details.componentFailures != null) {
+                for(MetadataService.DeployMessage deployMessage : deployResult.details.componentFailures) {
+                    if(deployMessage.problem != null) {
+                        
+                        deploymentErrorMessage += deployMessage.fileName +
+                                                 ' (Line: ' + deployMessage.lineNumber + ': Column:' + 
+                                                  deployMessage.columnNumber + ') : ' +
+                                                  deployMessage.problem;
+                        isDeployed = false;
+                        //enablePollar = false;
+                    }
+                }
+            }
+            else if(deployResult != null && deployResult.details != null && deployResult.details.runTestResult != null && 
+                    deployResult.details.runTestResult.failures != null) {
+                 for(MetadataService.RunTestFailure runTestFailureMessage : deployResult.details.runTestResult.failures) {
+                    if(runTestFailureMessage.message != null) {
+                        if(runTestFailureMessage.message.contains(System.Label.DeploymentTestClassFailureError)) {
+                            objectPrefix = UltraTrackUtility.sobjectMap.containsKey(objectApiName) ?
+                                           UltraTrackUtility.sobjectMap.get(objectApiName).getDescribe().getKeyPrefix():
+                                           '';
+                            objectCreateNewRecordUrl = '/' + objectPrefix + '/e';
+                            deploymentCreateRecordErrorMsg = objectTonotProvideCreateRecordMap.containsKey(objectApiName) ?
+                                                             UFHTConstants.WHITE_SPACE + System.Label.DeploymentErrorMessage_2 :
+                                                             ' To do so, please click' +
+                                                              UFHTConstants.WHITE_SPACE +
+                                                              '<a href='+ objectCreateNewRecordUrl +' target=\'_balnk\'>' + 'here' + '</a>' +
+                                                              UFHTConstants.WHITE_SPACE + 
+                                                              System.Label.DeploymentErrorMessage_1; 
+                            deploymentErrorMessage += System.Label.DeploymentErrorMessage.replace
+                                                      ('<object name>', 
+                                                      objects.subStringBefore(UFHTConstants.WHITE_SPACE + 
+                                                                              UFHTConstants.BRACKET_OPEN)
+                                                      ) +
+                                                      deploymentCreateRecordErrorMsg ;    
+                           system.debug('%% deploymentErrorMessage'+deploymentErrorMessage);  
+                        } 
+                        else {
+                            deploymentErrorMessage += System.Label.DeploymentErrorMessage.replace
+                                                      ('<object name>', 
+                                                      objects.subStringBefore(UFHTConstants.WHITE_SPACE + 
+                                                                              UFHTConstants.BRACKET_OPEN)
+                                                      ) +
+                                                      runTestFailureMessage.message.replace('UFHT.UFHTExceptions.DynamicTestClassCreationFailException: ', 
+                                                                                            UFHTConstants.WHITE_SPACE
+                                                                                            );
+                        }
+                        system.debug('%%!!! deploymentErrorMessage'+deploymentErrorMessage);  
+                        isDeployed = false;
+                        //enablePollar = false;
+                    }
+                    
+                 }
+            }
+            else if(deployResult != null && deployResult.details != null && deployResult.details.runTestResult != null && 
+                    deployResult.details.runTestResult.codeCoverageWarnings != null) {
+                 for(MetadataService.CodeCoverageWarning CodeCoveragMessage : deployResult.details.runTestResult.codeCoverageWarnings) {
+                    if(CodeCoveragMessage.message != null) {
+                        deploymentErrorMessage += CodeCoveragMessage.message;
+                        isDeployed = false;
+                        //enablePollar = false;
+                    }
+                    
+                 }
+            }
+            else {
+                isDeployed = true;
+                system.debug('%% isDeployed'+isDeployed); 
+                //enablePollar = false;
+                deploymentErrorMessage = UFHTConstants.DEPLOYMENT_SUCCESS_MSG;
+                system.debug('%% deploymentErrorMessage'+deploymentErrorMessage); 
+            }
+        }
+        else { 
+             isDeployed = false;
+             if(progressCounter < 90)
+                progressCounter = progressCounter + 20 > 90 ? progressCounter :  progressCounter + 20;
+                system.debug('%% progressCounter'+progressCounter); 
+        }
+        if(String.isNotBlank(deploymentErrorMessage)) {
+            
+            list<Ultra_Track_Container__c> containerList = [SELECT Id, 
+                                                                   Trigger_Status__c, 
+                                                                   Trigger_Deploy_Error__c, 
+                                                                   Is_Tracking_Enabled__c,
+                                                                   OWD_for_an_Object__c
+                                                            FROM Ultra_Track_Container__c
+                                                            WHERE Object_Name__c = :objects.substringAfterLast(UFHTConstants.BRACKET_OPEN).remove(UFHTConstants.BRACKET_CLOSE)
+                                                            ]; 
+             system.debug('%% containerList'+containerList); 
+            if(!containerList.isEmpty() && containerList[0] != null) {
+
+                if(isDeployed) {
+                  system.debug('%% ## isDeployed'+isDeployed); 
+                  containerList[0].Trigger_Status__c = UFHTConstants.DEPLOYED_KEYWORD;
+                  system.debug('%% ## Trigger Status '+containerList[0].Trigger_Status__c); 
+                  containerList[0].Is_Tracking_Enabled__c = true;
+                  system.debug('%% ## Is Enabled '+containerList[0].Is_Tracking_Enabled__c); 
+                  UltraTrackUtility.displayMessage(
+                                ApexPages.severity.Confirm, UFHTConstants.WHITE_SPACE
+                                + System.Label.Ultra_Track_Container_Save_Message1
+                                + UFHTConstants.WHITE_SPACE + objects.subStringBefore(UFHTConstants.WHITE_SPACE + UFHTConstants.BRACKET_OPEN)
+                                + UFHTConstants.WHITE_SPACE + System.Label.Ultra_Track_Container_Save_Message2 );
+                  pageMessages.add(new PageMessageWrapper(UFHTConstants.WHITE_SPACE
+                                + System.Label.Ultra_Track_Container_Save_Message1
+                                + UFHTConstants.WHITE_SPACE + objects.subStringBefore(UFHTConstants.WHITE_SPACE + UFHTConstants.BRACKET_OPEN)
+                                + UFHTConstants.WHITE_SPACE + System.Label.Ultra_Track_Container_Save_Message2,'Confirm'));
+                  system.debug('%% pageMessages'+pageMessages);
+                }
+                else {
+                   containerList[0].Trigger_Status__c = UFHTConstants.NOT_DEPLOYED_KEYWORD;
+                   containerList[0].Is_Tracking_Enabled__c = false;
+                   UltraTrackUtility.displayMessage(ApexPages.Severity.ERROR, deploymentErrorMessage);
+                   pageMessages.add(new PageMessageWrapper(deploymentErrorMessage,'Error'));
+                   system.debug('@@@ pageMessages'+pageMessages);
+                }
+                containerList[0].Trigger_Deploy_Error__c = deploymentErrorMessage;
+                system.debug('%% ## Deploy Error '+containerList[0].Trigger_Deploy_Error__c); 
+                //containerList[0].AsynResult_Id__c = '';
+                containerList[0].OWD_for_an_Object__c = selectedOWD;
+                system.debug('%% ## OWD '+containerList[0].OWD_for_an_Object__c);
+                Database.update(containerList[0], false);
+                system.debug('%% updated List '+containerList[0]);
+            }
+        }
+        //return progressCounter;
+        deploymentStatusTrigger = new DeploymentStatusTriggerWrapper(enablePollar,progressCounter,null,pageMessages);
+        return deploymentStatusTrigger;
+    }
+    
+    public void callNullReference() {
+    	system.debug('%% insideNullReference');
+    	system.debug('%% pageMessages'+pageMessages);
+    }
+    
+    public class FieldsWithPicklistWrapper {
+        public list<UltraTrackWrapper> allFieldswrapperList {get;set;}
+        public Boolean showOWDPicklist {get;set;}
+        public Ultra_Track_Container__c ultraTrackContainerObj {get;set;}
+        
+        public FieldsWithPicklistWrapper(list<UltraTrackWrapper> lstWrapper, 
+                                        Boolean showPicklist,Ultra_Track_Container__c ultraTrackObj) {
+            allFieldswrapperList = lstWrapper;
+            showOWDPicklist = showPicklist;
+            ultraTrackContainerObj = ultraTrackObj;
+        }
+    }
+    
+    public class DeploymentStatusTriggerWrapper {
+        public Boolean isEnablePollar {get; set;}
+        public Integer progCounter {get; set;}
+        public Id asyncId {get;set;}
+        public list<PageMessageWrapper> lstPageMessagesWrapper {get;set;}
+       
+        
+        public DeploymentStatusTriggerWrapper(Boolean enablePoll, Integer progresCounter, Id asycId,
+                                              list<PageMessageWrapper> lstPageMessage) {
+            isEnablePollar = enablePoll;
+            progCounter = progresCounter;
+            asyncId = asycId;
+            lstPageMessagesWrapper = lstPageMessage;
+
+        }
+    }
+
+    public class PageMessageWrapper {
+	    public String triggerStatusMessage {get;set;}
+	    public String typeOfMessage {get;set;}
+
+        public PageMessageWrapper(String statusMessage,String messageType) {
+            triggerStatusMessage = statusMessage;
+            typeOfMessage = messageType;
+        }
+    }
+
+}
